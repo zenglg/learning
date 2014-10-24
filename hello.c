@@ -2,8 +2,8 @@
 #include <linux/module.h>
 MODULE_LICENSE("Dual BSD/GPL");
 
-static char __initdata *whom = "world";
-static int __initdata howmany = 1;
+static char *whom = "world";
+static int howmany = 1;
 module_param(whom, charp, S_IRUGO);
 module_param(howmany, int, S_IRUGO);
 
