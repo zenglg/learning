@@ -3,6 +3,9 @@
 *.ko
 *.obj
 *.elf
+*.mod.c
+modules.order
+Module.symvers
 
 # Precompiled Headers
 *.gch
