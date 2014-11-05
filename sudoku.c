@@ -1,13 +1,14 @@
 /*************************************************
  * ***sudoku.c - sudoku模块主函数
  * ***
- * ***Copyrignt 2007-2010 Wuhan
+ * ***Copyrignt 2007-2014 Wuhan
  * ***
  * ***DESCRIPTION:-
  *  sudoku模块主函数
  *  ***modification history
  *  ***--------------------
  *  ***2012-01-14, wushuang written
+ *  ***2014-11-05, wushuang modified
  *  ***--------------------
  *  *************************************************/
 
@@ -16,83 +17,59 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#define YES	0
+#define NO	1
 
 #ifdef linux
 static void getch(void) {}
 #endif
 
-typedef struct mynode
+typedef struct sudoku
 {
 	int data;
 	int flag;
 } SUDOKU;
 
-static int sudoku_judge(int *, int *);
-static int sudoku_judge1(int *, int *);
-static int sudoku_judge2(int *, int *);
-static int sudoku_judge3(int *, int *);
-static int sudoku_solution(void);
+static void sudoku_get(char *);
+static void sudoku_print(void);
+static int sudoku_judge(int, int);
+static int sudoku_judge1(int, int);
+static int sudoku_judge2(int, int);
+static int sudoku_judge3(int, int);
+static void sudoku_solution(void);
+static int sudoku_sub_cal(int *, int *);
 
-static SUDOKU sudoku[9][9] = {0};
+static SUDOKU sudoku[9][9];
 
 
 
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	int i, j;
-	int ch;
-	FILE *fp;
-
-	if (NULL == (fp = fopen("SUDOKU_D.C", "r"))) {
-		printf("\n请确保SUDOKU_D.C文件与运行文件在同一文件夹内!\n");
-		return -1;
+	if (argc != 2) {
+		printf("Usage: %s <data_file>\n", argv[0]);
+		exit(-1);
 	}
+
+	sudoku_get(argv[1]);
 
 	printf("您输入的数独初始值为:\n");
-	for (i = 0; i < 9; i++) {
-		for (j = 0; j < 9; j++) {
-			ch = fgetc(fp);
-			if (('0' <= ch) && ('9' >= ch)) {
-				sudoku[i][j].data = ch - '0';
-				if (0 != sudoku[i][j].data) {
-					if (0 == sudoku_judge(&i, &j)) {
-						printf("\n\n\n\nDATA ERROR!\n");
-						printf("%d\t%d\n", i + 1, j + 1);
-						getch();
-						return -1;
-					}
-					sudoku[i][j].flag = 1;
-					printf("%d  ", sudoku[i][j].data);
-				} else {
-					printf("   ");
-				}
-				if (8 == j)
-					printf("\n");
-			} else {
-				j--;
-			}
-		}
-	}
-	fclose(fp);
+	sudoku_print();
 	printf("\n\n\n");
 
-	if (0 != sudoku_solution()) {
-		getch();
-		return -1;
-	}
+	sudoku_solution();
 
-	printf("该数独的完整形式为:\n");
-	for (i = 0; i < 9; i++) {
-		for (j = 0; j < 9; j++) {
-			printf("%d  ", sudoku[i][j].data);
-			if (8 == j)
-				printf("\n");
-		}
-	}
+	printf("数独的完整形式为:\n");
+	sudoku_print();
 
 	getch();
+
 	return 0;
 }
 
@@ -100,123 +77,160 @@ int main(void)
 
 
 
-static int sudoku_solution(void)
+static void sudoku_get(char *filename)
+{
+	int fd;
+	int i, j;
+	char buf[10];
+
+	fd = open(filename, O_RDONLY);
+	if (fd == -1) {
+		printf("open %s error!\n", filename);
+		exit(-1);
+	}
+	for (i = 0; i < 9; i++) {
+		read(fd, buf, 10);
+		for (j = 0; j < 9; j++) {
+			if ((buf[j] >= '0') && (buf[j] <= '9')) {
+				sudoku[i][j].data = buf[j] - '0';
+				sudoku[i][j].flag = (!(buf[j] - '0') ? 0 : 1);
+			} else {
+				printf("DATA ERROR!\n");
+				exit(-1);
+			}
+		}
+	}
+	close(fd);
+}
+
+static void sudoku_print(void)
+{
+	int i, j;
+
+	for (i = 0; i < 9; i++) {
+		for (j = 0; j < 9; j++) {
+			if (sudoku[i][j].data != 0)
+				printf("%d  ", sudoku[i][j].data);
+			else
+				printf("   ");
+		}
+		printf("\n");
+	}
+}
+
+static void sudoku_solution(void)
 {
 	int i, j;
 
 	for (i = 0; i < 9; i++) {
 		for (j = 0; j < 9;) {
-			if (1 == sudoku[i][j].flag) {
+			if (sudoku[i][j].flag == 1) {
 				j++;
 			} else { /* 回溯法求解 */
-				++sudoku[i][j].data;
-				while ((9 >= sudoku[i][j].data) &&
-				       (0 == sudoku_judge(&i, &j))) {
-					++sudoku[i][j].data;
-				}
-				if (9 >= sudoku[i][j].data) {
-					if (8 == j)
-						break;
-					else
-						j++;
-				} else {
-					sudoku[i][j].data = 0;
-					do {
-						if ((i >= 0) && (j > 0)) {
-							j--;
-						} else if ((i >= 0) && (j <= 0)) {
-							i--;
-							j = 8;
-						} else {
-							printf("DATA WRONG!\n");
-							printf("IF YOU ARE SURE THE DATA IS RIGHT,PLEASE E-MAIL ");
-							return -1;
-						}
-					} while (1 == sudoku[i][j].flag);
-				}
+				if (sudoku_sub_cal(&i, &j) == 1)
+					break;
 			}
 		}
 	}
+}
+
+static int sudoku_sub_cal(int *i, int *j)
+{
+	++sudoku[*i][*j].data;
+	while ((sudoku[*i][*j].data <= 9) &&
+	       (sudoku_judge(*i, *j) == YES)) {
+		++sudoku[*i][*j].data;
+	}
+	if (sudoku[*i][*j].data <= 9) {
+		if (*j == 8)
+			return 1;
+		else
+			(*j)++;
+	} else {
+		sudoku[*i][*j].data = 0;
+		do {
+			if ((*i >= 0) && (*j > 0)) {
+				(*j)--;
+			} else if ((*i >= 0) && (*j <= 0)) {
+				(*i)--;
+				*j = 8;
+			} else {
+				printf("DATA WRONG!Please check data\n");
+				exit(-1);
+			}
+		} while (1 == sudoku[*i][*j].flag);
+	}
+
 	return 0;
 }
 
 
 
-static int sudoku_judge(int *i, int *j)
+static int sudoku_judge(int i, int j)
 {
-	if ((1 == sudoku_judge1(i, j)) &&
-	    (1 == sudoku_judge2(i, j)) &&
-	    (1 == sudoku_judge3(i, j))) {
-		return 1;
+	if ((sudoku_judge1(i, j) == NO) &&
+	    (sudoku_judge2(i, j) == NO) &&
+	    (sudoku_judge3(i, j) == NO)) {
+		return NO;
 	}
-	return 0;
+	return YES;
 }
 
 
-static int sudoku_judge1(int *i, int *j)
-{
-	int t = 0;
 
-	while (t < (*j)) {
-		if (sudoku[*i][t].data == sudoku[*i][*j].data)
-			return 0;
-		t++;
-	}
-	if (t == (*j)) {
-		t++;
-		while (t < 9) {
-			if (sudoku[*i][t].data == sudoku[*i][*j].data)
-				return 0;
-			t++;
-		}
-	}
-
-	return 1;
-}
-
-
-static int sudoku_judge2(int *i, int *j)
+static int sudoku_judge1(int i, int j)
 {
 	int t = 0;
 
-	while (t < (*i)) {
-		if (sudoku[t][*j].data == sudoku[*i][*j].data)
-			return 0;
+	while (t < j) {
+		if (sudoku[i][t].data == sudoku[i][j].data)
+			return YES;
 		t++;
 	}
-	if (t == (*i)) {
+	t++;
+	while (t < 9) {
+		if (sudoku[i][t].data == sudoku[i][j].data)
+			return YES;
 		t++;
-		while (t < 9) {
-			if (sudoku[t][*j].data == sudoku[*i][*j].data)
-				return 0;
-			t++;
-		}
 	}
 
-	return 1;
+	return NO;
+}
+
+static int sudoku_judge2(int i, int j)
+{
+	int t = 0;
+
+	while (t < i) {
+		if (sudoku[t][j].data == sudoku[i][j].data)
+			return YES;
+		t++;
+	}
+	t++;
+	while (t < 9) {
+		if (sudoku[t][j].data == sudoku[i][j].data)
+			return YES;
+		t++;
+	}
+
+	return NO;
 }
 
 
-static int sudoku_judge3(int *i, int *j)
+static int sudoku_judge3(int i, int j)
 {
 	int m, n, r, s;
 
-	m = (*i) / 3;
-	n = (*j) / 3;
-	for (r = 3 * m; r <= 3 * m + 2; r++) {
-		for (s = 3 * n; s <= 3 * n + 2;) {
-			if ((r == (*i)) && (s == (*j)))
+	m = i / 3;
+	n = j / 3;
+	for (r = 3 * m; r < 3 * m + 3; r++) {
+		for (s = 3 * n; s < 3 * n + 3; s++) {
+			if ((r == i) && (s == j))
 				s++;
-			if ((s >= 3 * n + 3) ||
-			    (sudoku[*i][*j].data == sudoku[r][s].data)) {
-				break;
-			} else {
-				s++;
-			}
+			else if (sudoku[i][j].data == sudoku[r][s].data)
+				return YES;
 		}
-		if (s < 3 * n + 3)
-			break;
 	}
 
-	return ((r > 3 * m + 2) ? 1 : 0);
+	return NO;
 }
