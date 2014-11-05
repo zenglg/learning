@@ -54,18 +54,19 @@ int main(int argc, char *argv[])
 {
 	if (argc != 2) {
 		printf("Usage: %s <data_file>\n", argv[0]);
+		getch();
 		exit(-1);
 	}
 
 	sudoku_get(argv[1]);
 
-	printf("您输入的数独初始值为:\n");
+	printf("The original sudoku is:\n");
 	sudoku_print();
 	printf("\n\n\n");
 
 	sudoku_solution();
 
-	printf("数独的完整形式为:\n");
+	printf("Now the sudoku is:\n");
 	sudoku_print();
 
 	getch();
@@ -86,6 +87,7 @@ static void sudoku_get(char *filename)
 	fd = open(filename, O_RDONLY);
 	if (fd == -1) {
 		printf("open %s error!\n", filename);
+		getch();
 		exit(-1);
 	}
 	for (i = 0; i < 9; i++) {
@@ -96,6 +98,7 @@ static void sudoku_get(char *filename)
 				sudoku[i][j].flag = (!(buf[j] - '0') ? 0 : 1);
 			} else {
 				printf("DATA ERROR!\n");
+				getch();
 				exit(-1);
 			}
 		}
@@ -126,7 +129,7 @@ static void sudoku_solution(void)
 		for (j = 0; j < 9;) {
 			if (sudoku[i][j].flag == 1) {
 				j++;
-			} else { /* 回溯法求解 */
+			} else { /* Backtracking */
 				if (sudoku_sub_cal(&i, &j) == 1)
 					break;
 			}
@@ -156,6 +159,7 @@ static int sudoku_sub_cal(int *i, int *j)
 				*j = 8;
 			} else {
 				printf("DATA WRONG!Please check data\n");
+				getch();
 				exit(-1);
 			}
 		} while (1 == sudoku[*i][*j].flag);
