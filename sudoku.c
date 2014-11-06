@@ -29,11 +29,11 @@
 static void getch(void) {}
 #endif
 
-typedef struct sudoku
+static struct sudoku
 {
 	int data;
 	int flag;
-} SUDOKU;
+} sudoku[9][9];
 
 static void sudoku_get(char *);
 static void sudoku_print(void);
@@ -43,8 +43,6 @@ static int sudoku_judge2(int, int);
 static int sudoku_judge3(int, int);
 static void sudoku_solution(void);
 static int sudoku_sub_cal(int *, int *);
-
-static SUDOKU sudoku[9][9];
 
 
 
@@ -95,7 +93,7 @@ static void sudoku_get(char *filename)
 		for (j = 0; j < 9; j++) {
 			if ((buf[j] >= '0') && (buf[j] <= '9')) {
 				sudoku[i][j].data = buf[j] - '0';
-				sudoku[i][j].flag = (!(buf[j] - '0') ? 0 : 1);
+				sudoku[i][j].flag = !!(buf[j] - '0');
 			} else {
 				printf("DATA ERROR!\n");
 				getch();
