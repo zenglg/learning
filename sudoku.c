@@ -12,10 +12,6 @@
  *  ***--------------------
  *  *************************************************/
 
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -44,10 +40,6 @@ static int sudoku_judge3(int, int);
 static void sudoku_solution(void);
 static int sudoku_sub_cal(int *, int *);
 
-
-
-
-
 int main(int argc, char *argv[])
 {
 	if (argc != 2) {
@@ -71,10 +63,6 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-
-
-
 
 static void sudoku_get(char *filename)
 {
@@ -166,8 +154,6 @@ static int sudoku_sub_cal(int *i, int *j)
 	return 0;
 }
 
-
-
 static int sudoku_judge(int i, int j)
 {
 	if ((sudoku_judge1(i, j) == NO) &&
@@ -177,8 +163,6 @@ static int sudoku_judge(int i, int j)
 	}
 	return YES;
 }
-
-
 
 static int sudoku_judge1(int i, int j)
 {
@@ -217,7 +201,6 @@ static int sudoku_judge2(int i, int j)
 
 	return NO;
 }
-
 
 static int sudoku_judge3(int i, int j)
 {
