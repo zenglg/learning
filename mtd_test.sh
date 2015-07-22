@@ -24,7 +24,8 @@ setup()
 	ERASE_SIZE=$(mtd_debug info ${MTD_DEVICE} | grep erasesize | \
 			awk '{print $3}')
 
-	BLOCK_SIZE=$((2*1024*1024))
+	WRITE_SIZE=$(mtd_debug info ${MTD_DEVICE} | grep writesize | \
+			awk '{print $3}')
 
 	mk_tmp
 }
@@ -44,6 +45,7 @@ md5sum_check()
 	if [ ${ret1} = ${ret2} ]; then
 		return 0
 	else
+		echo "${ret1} is diff with ${ret2}"
 		return 1
 	fi
 }
@@ -51,44 +53,51 @@ md5sum_check()
 fnand2_debug_read()
 {
 	local device=$1
-	local offset=$(($2*${BLOCK_SIZE}))
+	local offset=$(($2*${ERASE_SIZE}))
 
-	mtd_debug read ${device} ${offset} ${BLOCK_SIZE} ${TMP}/read.data \
+	mtd_debug read ${device} ${offset} ${WRITE_SIZE} ${TMP}/read.data \
 		>/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "mtd_debug read ${offset} <${WRITE_SIZE}>: failed."
+		echo "	--'dmesg' for the detail."
+		return 1
+	fi
 
 	md5sum_check ${TMP}/read.data ${TMP}/write.data
 	if [ $? -ne 0 ]; then
-		echo "mtd_debug read ${offset} <${BLOCK_SIZE}>: failed."
+		echo "mtd_debug read: md5sum_check failed."
 	else
-		echo "mtd_debug read ${offset} <${BLOCK_SIZE}>: passed."
+		echo "mtd_debug read ${offset} <${WRITE_SIZE}>: passed."
 	fi
 }
 
 fnand2_debug_write()
 {
 	local device=$1
-	local offset=$(($2*${BLOCK_SIZE}))
+	local offset=$(($2*${ERASE_SIZE}))
 
 	dd if=/dev/urandom of=${TMP}/write.data bs=1024 \
-		count=$((${BLOCK_SIZE}/1024)) >/dev/null 2>&1
+		count=$((${WRITE_SIZE}/1024)) >/dev/null 2>&1
 
-	mtd_debug write ${device} ${offset} ${BLOCK_SIZE} ${TMP}/write.data \
+	mtd_debug write ${device} ${offset} ${WRITE_SIZE} ${TMP}/write.data \
 		>/dev/null 2>&1
 	if [ $? -ne 0 ]; then
-		echo "mtd_debug write ${offset} <${BLOCK_SIZE}>: failed."
+		echo "mtd_debug write ${offset} <${WRITE_SIZE}>: failed."
+		echo "	--'dmesg' for the detail."
 	else
-		echo "mtd_debug write ${offset} <${BLOCK_SIZE}>: passed."
+		echo "mtd_debug write ${offset} <${WRITE_SIZE}>: passed."
 	fi
 }
 
 fnand2_debug_erase()
 {
 	local device=$1
-	local offset=$(($2*${BLOCK_SIZE}))
+	local offset=$(($2*${ERASE_SIZE}))
 
 	mtd_debug erase ${device} ${offset} ${ERASE_SIZE} >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
 		echo "mtd_debug erase ${offset} <${ERASE_SIZE}>: failed."
+		echo "	--'dmesg' for the detail."
 	else
 		echo "mtd_debug erase ${offset} <${ERASE_SIZE}>: passed."
 	fi
@@ -96,12 +105,13 @@ fnand2_debug_erase()
 
 fnand2_debug_test()
 {
-	#for i in 0 8 16 1024 2048 4096
-	for i in 0
+	for i in ${MTD_TEST_BLOCKS}
 	do
+		echo "TEST $i blocks:"
 		fnand2_debug_erase ${MTD_DEVICE} $i
 		fnand2_debug_write ${MTD_DEVICE} $i
 		fnand2_debug_read ${MTD_DEVICE} $i
+		echo
 	done
 }
 
@@ -116,6 +126,8 @@ if [ ! -e $1 ]; then
 fi
 
 MTD_DEVICE=$1
+
+MTD_TEST_BLOCKS="0 8 16 1024 2048 4096"
 
 setup
 
