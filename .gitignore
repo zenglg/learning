@@ -1,9 +1,11 @@
 # Object files
 *.o
 *.ko
+*.cmd
 *.obj
 *.elf
 *.mod.c
+.tmp_versions
 modules.order
 Module.symvers
 
