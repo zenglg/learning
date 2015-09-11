@@ -53,11 +53,7 @@ md5sum_check()
 fnand2_debug_read()
 {
 	local device=$1
-	if [ ${erase_flag} = 1 ]; then
-		local offset=${OFFSET}
-	else
-		local offset=$(($2*${ERASE_SIZE}))
-	fi
+	local offset=$(($2*${ERASE_SIZE}))
 
 	mtd_debug read ${device} ${offset} ${WRITE_SIZE} ${TMP}/read.data \
 		>/dev/null 2>&1
@@ -78,11 +74,7 @@ fnand2_debug_read()
 fnand2_debug_write()
 {
 	local device=$1
-	if [ ${erase_flag} = 1 ]; then
-		local offset=${OFFSET}
-	else
-		local offset=$(($2*${ERASE_SIZE}))
-	fi
+	local offset=$(($2*${ERASE_SIZE}))
 
 	dd if=/dev/urandom of=${TMP}/write.data bs=1024 \
 		count=$((${WRITE_SIZE}/1024)) >/dev/null 2>&1
@@ -102,15 +94,12 @@ fnand2_debug_erase()
 	local device=$1
 	local offset=$(($2*${ERASE_SIZE}))
 
-	erase_flag=0
-	while ! mtd_debug erase ${device} ${offset} ${ERASE_SIZE} >/dev/null 2>&1
-	do
-		offset=$(($offset+$ERASE_SIZE))
-		OFFSET=${offset}
-		erase_flag=1
-	done
-
-	echo "mtd_debug erase ${offset} <${ERASE_SIZE}>: passed."
+	mtd_debug erase ${device} ${offset} ${ERASE_SIZE} >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		return 1
+	else
+		echo "mtd_debug erase ${offset} <${ERASE_SIZE}>: passed."
+	fi
 }
 
 fnand2_debug_test()
@@ -122,6 +111,9 @@ fnand2_debug_test()
 			i=$(($j*4096+$k))
 			echo "TEST $i blocks:"
 			fnand2_debug_erase ${MTD_DEVICE} $i
+			if [ $? -ne 0 ]; then
+				continue
+			fi
 			fnand2_debug_write ${MTD_DEVICE} $i
 			fnand2_debug_read ${MTD_DEVICE} $i
 			echo
@@ -141,7 +133,7 @@ fi
 
 MTD_DEVICE=$1
 
-MTD_TEST_BLOCKS="0 8 16 1024 2048"
+MTD_TEST_BLOCKS=$(seq 0 4095)
 
 setup
 
