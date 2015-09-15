@@ -96,9 +96,24 @@ fnand2_debug_erase()
 
 	mtd_debug erase ${device} ${offset} ${ERASE_SIZE} >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
-		return 1
+		echo "mtd_debug erase ${offset} <${ERASE_SIZE}>: failed."
+		echo "  --'dmesg' for the detail."
 	else
 		echo "mtd_debug erase ${offset} <${ERASE_SIZE}>: passed."
+	fi
+}
+
+fnand2_debug_scanbad()
+{
+	local device=$1
+	local offset=$(($2*${ERASE_SIZE}))
+
+	mtd_debug scanbad ${device} ${offset} ${ERASE_SIZE} >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "scanbad offset(${offset}) BAD BLOCK"
+		return 1
+	else
+		return 0
 	fi
 }
 
@@ -110,10 +125,12 @@ fnand2_debug_test()
 		do
 			i=$(($j*4096+$k))
 			echo "TEST $i blocks:"
-			fnand2_debug_erase ${MTD_DEVICE} $i
+			fnand2_debug_scanbad ${MTD_DEVICE} $i
 			if [ $? -ne 0 ]; then
+				echo
 				continue
 			fi
+			fnand2_debug_erase ${MTD_DEVICE} $i
 			fnand2_debug_write ${MTD_DEVICE} $i
 			fnand2_debug_read ${MTD_DEVICE} $i
 			echo
