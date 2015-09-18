@@ -3,6 +3,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/version.h>
 #include <linux/slab.h>
+#include <linux/sched.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
 # define MTD_READ_TEST_HAVE_WRITEBUFSIZE
