@@ -13,6 +13,10 @@ static int dev = -EINVAL;
 module_param(dev, int, S_IRUGO);
 MODULE_PARM_DESC(dev, "MTD device number to use");
 
+static unsigned long total_size = 4UL*1024*1024*1024;
+module_param(total_size, ulong, 0);
+MODULE_PARM_DESC(totoal_size, "Total size for testing MTD device");
+
 static struct mtd_info *mtd;
 
 static inline int mtdtest_read(struct mtd_info *mtd, loff_t addr, size_t size,
@@ -33,12 +37,29 @@ static inline int mtdtest_read(struct mtd_info *mtd, loff_t addr, size_t size,
 	return err;
 }
 
+static inline int mtdtest_write(struct mtd_info *mtd, loff_t addr, size_t size,
+				const void *buf)
+{
+	size_t written;
+	int err;
+
+	err = mtd_write(mtd, addr, size, &written, buf);
+	if (!err && written != size)
+		err = -EIO;
+	if (err)
+		pr_err("error: write failed at %#llx\n", addr);
+
+	return err;
+}
+
 static int __init mtd_read_test_init(void)
 {
 	int i;
 	int blocks;
 	int err;
-	char *buf;
+	loff_t len;
+	char *buf = NULL;
+	char *write_buf = NULL;
 	ktime_t begin, after, time_consuming;
 
 	if (dev < 0) {
@@ -59,6 +80,12 @@ static int __init mtd_read_test_init(void)
 	if (!buf)
 		goto out;
 
+	err = -ENOMEM;
+	write_buf = kmalloc(mtd->erasesize, GFP_KERNEL);
+	if (!write_buf)
+		goto out;
+	memset(write_buf, 'a', mtd->erasesize);
+
 	pr_info("type: %d\n", mtd->type);
 	pr_info("flags: %u\n", mtd->flags);
 	pr_info("size: %llu\n", mtd->size);
@@ -71,12 +98,25 @@ static int __init mtd_read_test_init(void)
 	pr_info("oobavail: %u\n", mtd->oobavail);
 	pr_info("name: %s\n", mtd->name);
 
-	blocks = mtd->size / mtd->erasesize;
+	len = mtd->erasesize;
+	blocks = (total_size < mtd->size ? total_size : mtd->size) / len;
+
+	for (i = 0; i < blocks; i++) {
+		if (mtd_block_isbad(mtd, i * len))
+			continue;
+		err = mtdtest_write(mtd, i * len, len, write_buf);
+		if (err < 0) {
+			pr_info("mtd_write error\n");
+			goto out;
+		}
+	}
 
 	begin = ktime_get();
 
 	for (i = 0; i < blocks; i++) {
-		err = mtdtest_read(mtd, 0, mtd->erasesize, buf);
+		if (mtd_block_isbad(mtd, i * len))
+			continue;
+		err = mtdtest_read(mtd, i * len, len, buf);
 		if (err < 0) {
 			pr_info("mtd_read error\n");
 			goto out;
@@ -84,7 +124,7 @@ static int __init mtd_read_test_init(void)
 	}
 
 	after = ktime_get();
-	
+
 	time_consuming = ktime_sub(after, begin);
 
 	pr_info("Time consuming: %llums -- %lluus\n",
@@ -92,6 +132,7 @@ static int __init mtd_read_test_init(void)
 
 out:
 	kfree(buf);
+	kfree(write_buf);
 	put_mtd_device(mtd);
 	return err;
 }
