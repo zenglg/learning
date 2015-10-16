@@ -4,9 +4,41 @@
 #include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/sched.h>
+#include <linux/delay.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
 # define MTD_READ_TEST_HAVE_WRITEBUFSIZE
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+# define FNAND2_HAS_GENERIC_MTD_INTERFACE
+#endif
+
+#ifndef FNAND2_HAS_GENERIC_MTD_INTERFACE
+static inline int mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
+			   size_t *retlen, u_char *buf)
+{
+	return mtd->read(mtd, from, len, retlen, buf);
+}
+static inline int mtd_write(struct mtd_info *mtd, loff_t from, size_t len,
+			   size_t *retlen, const u_char *buf)
+{
+	return mtd->write(mtd, from, len, retlen, buf);
+}
+static inline int mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
+{
+	return mtd->erase(mtd, instr);
+}
+static inline int mtd_is_bitflip(int err)
+{
+	return err == -EUCLEAN;
+}
+static inline int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
+{
+	if (!mtd->block_isbad)
+		return 0;
+	return mtd->block_isbad(mtd, ofs);
+}
 #endif
 
 static int dev = -EINVAL;
@@ -15,7 +47,13 @@ MODULE_PARM_DESC(dev, "MTD device number to use");
 
 static unsigned long total_size = 4UL*1024*1024*1024;
 module_param(total_size, ulong, 0);
-MODULE_PARM_DESC(totoal_size, "Total size for testing MTD device");
+MODULE_PARM_DESC(totoal_size, "Total device size for testing MTD device");
+
+static unsigned long offs = 4UL*1024;
+module_param(offs, ulong, 0);
+
+static unsigned long len = 4UL*1024;
+module_param(len, ulong, 0);
 
 static struct mtd_info *mtd;
 
@@ -26,6 +64,7 @@ static inline int mtdtest_read(struct mtd_info *mtd, loff_t addr, size_t size,
 	int err;
 
 	err = mtd_read(mtd, addr, size, &read, buf);
+
 	/* Ignore corrected ECC errors */
 	if (mtd_is_bitflip(err))
 		err = 0;
@@ -56,11 +95,13 @@ static int __init mtd_read_test_init(void)
 {
 	int i;
 	int blocks;
-	int err;
-	loff_t len;
+	int err = 0;
+	int count = 0;
 	char *buf = NULL;
-	char *write_buf = NULL;
-	ktime_t begin, after, time_consuming;
+	static unsigned long long  time = 0;
+	struct erase_info ei;
+
+	ktime_t start, end;
 
 	if (dev < 0) {
 		pr_info("Please specify a valid mtd-device via module parameter\n");
@@ -75,17 +116,6 @@ static int __init mtd_read_test_init(void)
 		return err;
 	}
 
-	err = -ENOMEM;
-	buf = kmalloc(mtd->erasesize, GFP_KERNEL);
-	if (!buf)
-		goto out;
-
-	err = -ENOMEM;
-	write_buf = kmalloc(mtd->erasesize, GFP_KERNEL);
-	if (!write_buf)
-		goto out;
-	memset(write_buf, 'a', mtd->erasesize);
-
 	pr_info("type: %d\n", mtd->type);
 	pr_info("flags: %u\n", mtd->flags);
 	pr_info("size: %llu\n", mtd->size);
@@ -98,41 +128,48 @@ static int __init mtd_read_test_init(void)
 	pr_info("oobavail: %u\n", mtd->oobavail);
 	pr_info("name: %s\n", mtd->name);
 
-	len = mtd->erasesize;
+	buf = kmalloc(len, GFP_KERNEL);
+	if (!buf) {
+		pr_info("buf - erasesize: %d\n", mtd->erasesize);
+		err = -ENOMEM;
+		goto out;
+	}
+
 	blocks = (total_size < mtd->size ? total_size : mtd->size) / len;
 
-	for (i = 0; i < blocks; i++) {
-		if (mtd_block_isbad(mtd, i * len))
-			continue;
-		err = mtdtest_write(mtd, i * len, len, write_buf);
-		if (err < 0) {
-			pr_info("mtd_write error\n");
-			goto out;
-		}
-	}
-
-	begin = ktime_get();
+	pr_info("blocks: %d\n", blocks);
 
 	for (i = 0; i < blocks; i++) {
 		if (mtd_block_isbad(mtd, i * len))
 			continue;
+
+		start = ktime_get();
+
 		err = mtdtest_read(mtd, i * len, len, buf);
 		if (err < 0) {
-			pr_info("mtd_read error\n");
+			pr_info("i: %d, len: %lu, i * len: %lu\n", i, len, i * len);
+			pr_info("mtd_read error, err: %d\n", err);
 			goto out;
 		}
+
+		end = ktime_get();
+
+		time += (end.tv64 - start.tv64);
+		count++;
 	}
 
-	after = ktime_get();
+	pr_info("count: %d\n", count);
+	pr_info("size: %lu\n", count * len);
+	pr_info("Time : %llu %lluns\n", time, time / count);
 
-	time_consuming = ktime_sub(after, begin);
+	memset(&ei, 0, sizeof(struct erase_info));
+	ei.mtd  = mtd;
+	ei.addr = 0;
+	ei.len  = mtd->erasesize;
 
-	pr_info("Time consuming: %llums -- %lluus\n",
-		time_consuming.tv64 / 1000000, time_consuming.tv64 / 1000);
-
+	mtd_erase(mtd, &ei);
 out:
 	kfree(buf);
-	kfree(write_buf);
 	put_mtd_device(mtd);
 	return err;
 }
