@@ -15,6 +15,7 @@
 #endif
 
 #ifndef FNAND2_HAS_GENERIC_MTD_INTERFACE
+
 static inline int mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 			   size_t *retlen, u_char *buf)
 {
@@ -39,6 +40,7 @@ static inline int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
 		return 0;
 	return mtd->block_isbad(mtd, ofs);
 }
+
 #endif
 
 static int dev = -EINVAL;
@@ -48,9 +50,6 @@ MODULE_PARM_DESC(dev, "MTD device number to use");
 static unsigned long total_size = 4UL*1024*1024*1024;
 module_param(total_size, ulong, 0);
 MODULE_PARM_DESC(totoal_size, "Total device size for testing MTD device");
-
-static unsigned long offs = 4UL*1024;
-module_param(offs, ulong, 0);
 
 static unsigned long len = 4UL*1024;
 module_param(len, ulong, 0);
