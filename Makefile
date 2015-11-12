@@ -1,6 +1,7 @@
 KVERS = $(shell uname -r)
 # Kernel modules
 obj-m += hello.o
+obj-m += mtd_read_test.o
 # Specify flags for the module compilation.
 #EXTRA_CFLAGS=-g O0
 
