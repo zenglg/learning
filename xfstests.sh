@@ -4,14 +4,23 @@
 # Date:		2014-09-03
 # Edit:
 #		2015-09-10	Zeng Linggang <zenglg.jy@cn.fujitsu.com>
+#		2015-11-17	Zeng Linggang <zenglg.jy@cn.fujitsu.com>
 # File:
 #		1. /root/local.config : xfstests config file.
-#		2. /root/filter.sh : filter the issue test(s).
+#		2. /root/filter.sh :	filter the issue test(s).
 
 fail()
 {
 	echo $@
 	exit 1
+}
+
+rod()
+{
+	$@ 2>&1 | tee -a ${XFSTEST_CHECK_LOG}
+	if [ $? -ne 0 ]; then
+		fail $@
+	fi
 }
 
 if [ $# -ne 1 ]; then
@@ -28,60 +37,36 @@ if [ ! -f "$XFSTEST_CONFIG" ]; then
 	fail "$XFSTEST_CONFIG is not exist"
 fi
 
-TEST_DEV=`grep "TEST_DEV=/dev/" $XFSTEST_CONFIG | awk -F '=' '{print $2}'`
+TEST_DEV=$(awk -F '=' '/TEST_DEV=\/dev\// {print $2}' ${XFSTEST_CONFIG})
 if [ -z $TEST_DEV ]; then
 	fail "$TEST_DEV is not set in $XFSTEST_CONFIG"
 fi
 
-SCRATCH_DEV=`grep "SCRATCH_DEV=/dev/" $XFSTEST_CONFIG | awk -F '=' '{print $2}'`
+SCRATCH_DEV=$(awk -F '=' '/SCRATCH_DEV=\/dev\// {print $2}' ${XFSTEST_CONFIG})
 if [ -z $SCRATCH_DEV ]; then
 	fail "$SCRATCH_DEV is not set in $XFSTEST_CONFIG"
 fi
 
-XFSTEST_CHECK_LOG="/root/xfstest_check.log"
+XFSTEST_CHECK_LOG="/root/xfstests_check.log"
 if [ -f $XFSTEST_CHECK_LOG ]; then
 	rm -rf $XFSTEST_CHECK_LOG
 fi
 
-rpm -qi libuuid-devel &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "libuuid-devel is not installed"
-fi
+rod rpm -qi libuuid-devel
 
-rpm -qi xfsprogs-devel &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "xfsprogs-devel is not installed"
-fi
+rod rpm -qi xfsprogs-devel
 
-rpm -qi libattr-devel &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "libattr-devel is not installed"
-fi
+rod rpm -qi libattr-devel
 
-rpm -qi libacl-devel &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "libacl-devel is not installed"
-fi
+rod rpm -qi libacl-devel
 
-rpm -qi libaio-devel &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "libaio-devel is not installed"
-fi
+rod rpm -qi libaio-devel
 
-rpm -qi fio &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "fio is not installed"
-fi
+rod rpm -qi fio
 
-rpm -qi yp-tools &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "yp-tools is not installed"
-fi
+rod rpm -qi yp-tools
 
-rpm -qi dump &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "dump is not installed"
-fi
+rod rpm -qi dump
 
 grep -q fsgqa /etc/passwd
 if [ $? -ne 0 ]; then
@@ -95,80 +80,70 @@ fi
 #	exit 1
 #fi
 
-if [ ! -d "/root/xfstests" ]; then
-	git clone git://10.167.225.115/git2/oss.sgi.com/xfs/cmds/xfstests.git /root/xfstests
-	if [ $? -ne 0 ]; then
-		fail "git clone"
-	fi
+GIT_URL="git://10.167.225.115/git2/oss.sgi.com/xfs/cmds/xfstests.git"
+XFSTESTS_DIR="/root/xfstests"
+if [ ! -d "${XFSTESTS_DIR}" ]; then
+	rod git clone ${GIT_URL} ${XFSTESTS_DIR}
 fi
 
 if [ -d "/var/lib/xfstests/" ]; then
 	rm -rf "/var/lib/xfstests/"
 fi
 
-if [ -f "/root/xfstests.log" ]; then
-	rm -rf "/root/xfstests.log"
+if [ -f "${XFSTESTS_DIR}.log" ]; then
+	rm -rf "${XFSTESTS_DIR}.log"
 fi
 
-cd "/root/xfstests"
+cd "${XFSTESTS_DIR}"
 
-git pull
-if [ $? -ne 0 ]; then
-	fail "git pull ERROR!"
-fi
+rod git pull
 
-make clean
-if [ $? -ne 0 ]; then
-	fail "make clean ERROR!"
-fi
+rod make clean
 
-make &>> $XFSTEST_CHECK_LOG
-if [ $? -ne 0 ]; then
-	fail "make ERROR! Please check $XFSTEST_CHECK_LOG"
-fi
+rod make
 
-make install
-if [ $? -ne 0 ]; then
-	fail "make install ERROR!"
-fi
+rod make install
 
 if [ -f /root/filter.sh ]; then
 	/root/filter.sh
 fi
 
-cp $XFSTEST_CONFIG "/var/lib/xfstests/"
+cp ${XFSTEST_CONFIG} "/var/lib/xfstests/"
 
 cd /var/lib/xfstests/
 
-cat /proc/self/mounts | grep -q "$TEST_DEV"
+MOUNTS="/proc/self/mounts"
+
+grep -q ${TEST_DEV} ${MOUNTS}
 if [ $? -eq 0 ]; then
-	if ! umount "$TEST_DEV"; then
-		fail "umount ERROR! Please check $TEST_DEV in /proc/self/mounts"
+	if ! umount ${TEST_DEV}; then
+		fail "umount ERROR! Please check ${TEST_DEV} in ${MOUNTS}"
 	fi
 fi
 
 if [ ${fstype} == "ext4" ]; then
-	mkfs -t ${fstype} "$TEST_DEV"
+	rod mkfs -t ${fstype} ${TEST_DEV}
 elif [ ${fstype} == "xfs" ]; then
-	mkfs -t ${fstype} -f "$TEST_DEV"
+	rod mkfs -t ${fstype} -f ${TEST_DEV}
 fi
 
-cat /proc/self/mounts | grep -q "$SCRATCH_DEV"
+grep -q ${SCRATCH_DEV} ${MOUNTS}
 if [ $? -eq 0 ]; then
-	if ! umount "$SCRATCH_DEV"; then
-		fail "umount ERROR! Please check $SCRATCH_DEV in /proc/self/mounts"
+	if ! umount ${SCRATCH_DEV}; then
+		fail "umount ERROR! Please check ${SCRATCH_DEV} in ${MOUNTS}"
 	fi
 fi
+
 if [ ${fstype} == "ext4" ]; then
-	mkfs -t ${fstype} "$SCRATCH_DEV"
+	rod mkfs -t ${fstype} ${SCRATCH_DEV}
 elif [ ${fstype} == "xfs" ]; then
-	mkfs -t ${fstype} -f "$SCRATCH_DEV"
+	rod mkfs -t ${fstype} -f ${SCRATCH_DEV}
 fi
 
-cat /proc/self/mounts | grep -q "/mnt"
+grep -q "/mnt" ${MOUNTS}
 if [ $? -eq 0 ]; then
 	if ! umount "/mnt"; then
-		fail "umount ERROR! Please check /mnt in /proc/self/mounts"
+		fail "umount ERROR! Please check /mnt in ${MOUNTS}"
 	fi
 fi
 
