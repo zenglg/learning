@@ -159,7 +159,10 @@ static int __init mtd_read_test_init(void)
 
 	pr_info("count: %d\n", count);
 	pr_info("size: %lu\n", count * len);
-	pr_info("Time : %llu %lluns\n", time, time / count);
+	if (count)
+		pr_info("Time : %llu ns %llu ns\n", time, time / count);
+	else
+		pr_info("Time : %llu ns\n", time);
 
 	memset(&ei, 0, sizeof(struct erase_info));
 	ei.mtd  = mtd;
