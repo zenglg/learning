@@ -51,6 +51,9 @@ static unsigned long total_size = 4UL*1024*1024*1024;
 module_param(total_size, ulong, 0);
 MODULE_PARM_DESC(totoal_size, "Total device size for testing MTD device");
 
+static unsigned long offs = 0;
+module_param(offs, ulong, 0);
+
 static unsigned long len = 4UL*1024;
 module_param(len, ulong, 0);
 
@@ -139,12 +142,12 @@ static int __init mtd_read_test_init(void)
 	pr_info("blocks: %d\n", blocks);
 
 	for (i = 0; i < blocks; i++) {
-		if (mtd_block_isbad(mtd, i * len))
+		if (mtd_block_isbad(mtd, offs + i * len))
 			continue;
 
 		start = ktime_get();
 
-		err = mtdtest_read(mtd, i * len, len, buf);
+		err = mtdtest_read(mtd, offs + i * len, len, buf);
 		if (err < 0) {
 			pr_info("i: %d, len: %lu, i * len: %lu\n", i, len, i * len);
 			pr_info("mtd_read error, err: %d\n", err);
