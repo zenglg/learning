@@ -167,6 +167,7 @@ fail_malloc:
 static void globalmem_exit(void)
 {
 	cdev_del(&globalmem_devp->cdev);
+	kfree(globalmem_devp);
 	unregister_chrdev_region(MKDEV(globalmem_major, 0), 1);
 }
 
