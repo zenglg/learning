@@ -22,6 +22,12 @@ struct globalmem_dev {
 
 struct globalmem_dev *globalmem_devp;
 
+int globalmem_open(struct inode *inode, struct file *filp)
+{
+	filp->private_data = globalmem_devp;
+	return 0;
+}
+
 static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 			      loff_t *ppos)
 {
@@ -118,6 +124,7 @@ static long globalmem_ioctl(struct file *filp, unsigned int cmd,
 
 static const struct file_operations globalmem_fops = {
 	.owner = THIS_MODULE,
+	.open = globalmem_open,
 	.llseek = globalmem_llseek,
 	.read = globalmem_read,
 	.write = globalmem_write,
