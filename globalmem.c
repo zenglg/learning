@@ -7,6 +7,7 @@
 #include <linux/init.h>
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
+#include <linux/slab.h>
 
 #define GLOBALMEM_SIZE	0x1000
 #define MEM_CLEAR	0x1
@@ -19,7 +20,7 @@ struct globalmem_dev {
 	unsigned char mem[GLOBALMEM_SIZE];
 };
 
-struct globalmem_dev dev;
+struct globalmem_dev *globalmem_devp;
 
 static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 			      loff_t *ppos)
@@ -32,7 +33,7 @@ static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 	if (count > GLOBALMEM_SIZE - p)
 		count = GLOBALMEM_SIZE - p;
 
-	if (copy_to_user(buf, (void *)(dev.mem + p), count)) {
+	if (copy_to_user(buf, (void *)(globalmem_devp->mem + p), count)) {
 		ret = -EFAULT;
 	} else {
 		*ppos += count;
@@ -54,7 +55,7 @@ static ssize_t globalmem_write(struct file *filp, const char __user *buf,
 	if (count > GLOBALMEM_SIZE - p)
 		count = GLOBALMEM_SIZE - p;
 
-	if (copy_from_user(dev.mem + p, buf, count)) {
+	if (copy_from_user(globalmem_devp->mem + p, buf, count)) {
 		ret = -EFAULT;
 	} else {
 		*ppos += count;
@@ -106,7 +107,7 @@ static long globalmem_ioctl(struct file *filp, unsigned int cmd,
 {
 	switch (cmd) {
 	case MEM_CLEAR:
-		memset(dev.mem, 0, GLOBALMEM_SIZE);
+		memset(globalmem_devp->mem, 0, GLOBALMEM_SIZE);
 		printk(KERN_INFO "globalmem is set to zero\n");
 		break;
 	default:
@@ -127,9 +128,9 @@ static void globalmem_setup_cdev(void)
 {
 	int err, devno = MKDEV(globalmem_major, 0);
 
-	cdev_init(&dev.cdev, &globalmem_fops);
-	dev.cdev.owner = THIS_MODULE;
-	err = cdev_add(&dev.cdev, devno, 1);
+	cdev_init(&globalmem_devp->cdev, &globalmem_fops);
+	globalmem_devp->cdev.owner = THIS_MODULE;
+	err = cdev_add(&globalmem_devp->cdev, devno, 1);
 	if (err)
 		printk(KERN_NOTICE "Error %d adding globalmem", err);
 }
@@ -149,13 +150,23 @@ static int globalmem_init(void)
 	if (result < 0)
 		return result;
 
+	globalmem_devp = kzalloc(sizeof(struct globalmem_dev), GFP_KERNEL);
+	if (!globalmem_devp) {
+		result = -ENOMEM;
+		goto fail_malloc;
+	}
+
 	globalmem_setup_cdev();
 	return 0;
+
+fail_malloc:
+	unregister_chrdev_region(MKDEV(globalmem_major, 0), 1);
+	return result;
 }
 
 static void globalmem_exit(void)
 {
-	cdev_del(&dev.cdev);
+	cdev_del(&globalmem_devp->cdev);
 	unregister_chrdev_region(MKDEV(globalmem_major, 0), 1);
 }
 
