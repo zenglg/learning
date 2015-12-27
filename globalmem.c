@@ -38,13 +38,14 @@ static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 {
 	unsigned long p = *ppos;
 	int ret = 0;
+	struct globalmem_dev *dev = filp->private_data;
 
 	if (p >= GLOBALMEM_SIZE)
 		return 0;
 	if (count > GLOBALMEM_SIZE - p)
 		count = GLOBALMEM_SIZE - p;
 
-	if (copy_to_user(buf, (void *)(globalmem_devp->mem + p), count)) {
+	if (copy_to_user(buf, (void *)(dev->mem + p), count)) {
 		ret = -EFAULT;
 	} else {
 		*ppos += count;
@@ -60,13 +61,14 @@ static ssize_t globalmem_write(struct file *filp, const char __user *buf,
 {
 	unsigned long p = *ppos;
 	int ret = 0;
+	struct globalmem_dev *dev = filp->private_data;
 
 	if (p >= GLOBALMEM_SIZE)
 		return 0;
 	if (count > GLOBALMEM_SIZE - p)
 		count = GLOBALMEM_SIZE - p;
 
-	if (copy_from_user(globalmem_devp->mem + p, buf, count)) {
+	if (copy_from_user(dev->mem + p, buf, count)) {
 		ret = -EFAULT;
 	} else {
 		*ppos += count;
@@ -116,9 +118,11 @@ static loff_t globalmem_llseek(struct file *filp, loff_t offset, int orig)
 static long globalmem_ioctl(struct file *filp, unsigned int cmd,
 			    unsigned long arg)
 {
+	struct globalmem_dev *dev = filp->private_data;
+
 	switch (cmd) {
 	case MEM_CLEAR:
-		memset(globalmem_devp->mem, 0, GLOBALMEM_SIZE);
+		memset(dev->mem, 0, GLOBALMEM_SIZE);
 		printk(KERN_INFO "globalmem is set to zero\n");
 		break;
 	default:
