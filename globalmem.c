@@ -130,7 +130,7 @@ static long globalmem_ioctl(struct file *filp, unsigned int cmd,
 static const struct file_operations globalmem_fops = {
 	.owner = THIS_MODULE,
 	.open = globalmem_open,
-	.open = globalmem_release,
+	.release = globalmem_release,
 	.llseek = globalmem_llseek,
 	.read = globalmem_read,
 	.write = globalmem_write,
