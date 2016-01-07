@@ -12,15 +12,15 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
         printk("current task on CPU#%d: %s (before scheduling)\n",
                smp_processor_id(), current->comm);
-        printk("regs->di: %x\n", regs->di);
-        printk("regs->si: %x\n", regs->si);
-        printk("regs->dx: %x\n", regs->dx);
-        printk("regs->cx: %x\n", regs->cx);
-        printk("regs->ax: %x\n", regs->ax);
+        printk("regs->di: %lx\n", regs->di);
+        printk("regs->si: %lx\n", regs->si);
+        printk("regs->dx: %lx\n", regs->dx);
+        printk("regs->cx: %lx\n", regs->cx);
+        printk("regs->ax: %lx\n", regs->ax);
         printk("flags: %x, PF_EXITING: %x\n",
                ((struct task_struct *)(regs->di))->flags, PF_EXITING);
         printk("pid: %d\n", ((struct task_struct *)(regs->di))->pid);
-        printk("io_context: %x\n",
+        printk("io_context: %p\n",
                ((struct task_struct *)(regs->di))->io_context);
 
         return 0;
