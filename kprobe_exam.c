@@ -50,7 +50,7 @@ static __init int init_kprobe_exam(void)
 	kp.addr = (kprobe_opcode_t *) kallsyms_lookup_name("cgroup_exit");
 	kp.symbol_name = "cgroup_exit";
 
-	if ((ret = register_kprobe(&kp) < 0)) {
+	if ((ret = register_kprobe(&kp)) < 0) {
 		printk("register_kprobe failed, returned %d\n", ret);
 		return -1;
 	}
