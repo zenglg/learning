@@ -47,8 +47,11 @@ static __init int init_kprobe_exam(void)
 	kp.pre_handler = handler_pre;
 	kp.post_handler = handler_post;
 	kp.fault_handler = handler_fault;
+/*
 	kp.addr = (kprobe_opcode_t *) kallsyms_lookup_name("cgroup_exit");
 	kp.symbol_name = "cgroup_exit";
+*/
+	kp.addr = (kprobe_opcode_t *) kallsyms_lookup_name("vfs_setxattr");
 
 	if ((ret = register_kprobe(&kp)) < 0) {
 		printk("register_kprobe failed, returned %d\n", ret);
