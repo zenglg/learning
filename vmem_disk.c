@@ -29,15 +29,13 @@ module_param(request_mode, int, 0);
 #define VMEM_DISK_MINORS    16
 #define KERNEL_SECTOR_SIZE  512
 
-struct vmem_disk_dev {
+static struct vmem_disk_dev {
 	int size;                       /* Device size in sectors */
 	u8 *data;                       /* The data array */
 	spinlock_t lock;                /* For mutual exclusion */
 	struct request_queue *queue;    /* The device request queue */
 	struct gendisk *gd;             /* The gendisk structure */
-};
-
-static struct vmem_disk_dev *devices;
+} *devices;
 
 /*
  * Handle an I/O request.
@@ -139,7 +137,7 @@ static const struct block_device_operations vmem_disk_ops = {
 static void setup_device(struct vmem_disk_dev *dev, int which)
 {
 	memset(dev, 0, sizeof(struct vmem_disk_dev));
-	dev->size = NSECTORS*HARDSECT_SIZE;
+	dev->size = NSECTORS * HARDSECT_SIZE;
 	dev->data = vmalloc(dev->size);
 	if (dev->data == NULL) {
 		pr_info("vmalloc failure.\n");
@@ -180,7 +178,7 @@ static void setup_device(struct vmem_disk_dev *dev, int which)
 	dev->gd->queue = dev->queue;
 	dev->gd->private_data = dev;
 	snprintf(dev->gd->disk_name, 32, "vmem_disk%c", which + 'a');
-	set_capacity(dev->gd, NSECTORS*(HARDSECT_SIZE/KERNEL_SECTOR_SIZE));
+	set_capacity(dev->gd, NSECTORS * (HARDSECT_SIZE / KERNEL_SECTOR_SIZE));
 	add_disk(dev->gd);
 	return;
 
