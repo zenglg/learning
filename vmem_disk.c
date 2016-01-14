@@ -208,7 +208,7 @@ static int __init vmem_disk_init(void)
 	return 0;
 
 out_unregister:
-	unregister_blkdev(vmem_disk_major, "sbd");
+	unregister_blkdev(vmem_disk_major, "vmem_disk");
 	return -ENOMEM;
 }
 
