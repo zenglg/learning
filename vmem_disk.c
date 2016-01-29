@@ -14,6 +14,8 @@
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 3, 0)
 # define BIO_ENDIO(bio, status)	bio_endio(bio)
+#else
+# define BIO_ENDIO(bio, status)	bio_endio(bio, status)
 #endif
 
 static int vmem_disk_major;
