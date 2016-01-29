@@ -5,6 +5,8 @@
 #include <linux/slab.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
+#include <linux/delay.h>
+#include <linux/vmalloc.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
 # define MTD_READ_TEST_HAVE_WRITEBUFSIZE
