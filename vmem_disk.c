@@ -111,6 +111,8 @@ static void vmem_disk_request(struct request_queue *q)
 /*
  * The direct make request version.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+
 static blk_qc_t vmem_disk_make_request(struct request_queue *q, struct bio *bio)
 {
 	struct vmem_disk_dev *dev = q->queuedata;
@@ -121,6 +123,19 @@ static blk_qc_t vmem_disk_make_request(struct request_queue *q, struct bio *bio)
 
 	return BLK_QC_T_NONE;
 }
+
+#else
+
+static void vmem_disk_make_request(struct request_queue *q, struct bio *bio)
+{
+	struct vmem_disk_dev *dev = q->queuedata;
+	int status;
+
+	status = vmem_disk_xfer_bio(dev, bio);
+	BIO_ENDIO(bio, status);
+}
+
+#endif
 
 static int vmem_disk_getgeo(struct block_device *bdev, struct hd_geometry *geo)
 {
