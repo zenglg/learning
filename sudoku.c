@@ -22,8 +22,8 @@
 #define YES	0
 #define NO	1
 
-#ifdef linux
-static void getch(void) {}
+#ifndef getch
+# define getch()	{}
 #endif
 
 static struct sudoku
