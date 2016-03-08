@@ -79,6 +79,14 @@ rod rpm -qi yp-tools
 
 rod rpm -qi dump
 
+rod rpm -qi git
+
+rod rpm -qi automake
+
+rod rpm -qi gcc
+
+rod rpm -qi libtool
+
 grep -q fsgqa /etc/passwd
 if [ $? -ne 0 ]; then
 	useradd fsgqa
