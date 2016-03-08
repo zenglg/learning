@@ -33,23 +33,33 @@ fi
 fstype=$1
 
 XFSTEST_CONFIG="/root/local.config"
-if [ ! -f "$XFSTEST_CONFIG" ]; then
-	fail "$XFSTEST_CONFIG is not exist"
+if [ ! -f "${XFSTEST_CONFIG}" ]; then
+	fail "${XFSTEST_CONFIG} is not exist"
 fi
 
-TEST_DEV=$(awk -F '=' '/TEST_DEV=\/dev\// {print $2}' ${XFSTEST_CONFIG})
-if [ -z $TEST_DEV ]; then
-	fail "$TEST_DEV is not set in $XFSTEST_CONFIG"
+TEST_DEV=$(awk -F '=' '/^TEST_DEV=/ {print $2}' ${XFSTEST_CONFIG})
+if [ -z ${TEST_DEV} ]; then
+	fail "TEST_DEV is not set in ${XFSTEST_CONFIG}"
 fi
 
-SCRATCH_DEV=$(awk -F '=' '/SCRATCH_DEV=\/dev\// {print $2}' ${XFSTEST_CONFIG})
-if [ -z $SCRATCH_DEV ]; then
-	fail "$SCRATCH_DEV is not set in $XFSTEST_CONFIG"
+TEST_DIR=$(awk -F '=' '/^TEST_DIR=/ {print $2}' ${XFSTEST_CONFIG})
+if [ -z ${TEST_DIR} ]; then
+	fail "TEST_DIR is not set in ${XFSTEST_CONFIG}"
+fi
+
+SCRATCH_DEV=$(awk -F '=' '/^SCRATCH_DEV=/ {print $2}' ${XFSTEST_CONFIG})
+if [ -z ${SCRATCH_DEV} ]; then
+	fail "SCRATCH_DEV is not set in ${XFSTEST_CONFIG}"
+fi
+
+SCRATCH_MNT=$(awk -F '=' '/^SCRATCH_MNT=/ {print $2}' ${XFSTEST_CONFIG})
+if [ -z ${SCRATCH_MNT} ]; then
+	fail "SCRATCH_MNT is not set in ${XFSTEST_CONFIG}"
 fi
 
 XFSTEST_CHECK_LOG="/root/xfstests_check.log"
-if [ -f $XFSTEST_CHECK_LOG ]; then
-	rm -rf $XFSTEST_CHECK_LOG
+if [ -f ${XFSTEST_CHECK_LOG} ]; then
+	rm -rf ${XFSTEST_CHECK_LOG}
 fi
 
 rod rpm -qi libuuid-devel
@@ -148,11 +158,11 @@ if [ $? -eq 0 ]; then
 fi
 
 if [ ! -d "/mnt/xfstests/test" ]; then
-	mkdir -p "/mnt/xfstests/test"
+	mkdir -p "${TEST_DIR}"
 fi
 
 if [ ! -d "/mnt/xfstests/scratch" ]; then
-	mkdir -p "/mnt/xfstests/scratch"
+	mkdir -p "${SCRATCH_MNT}"
 fi
 
 xfstests_log="$(date +"%Y%m%d")_${fstype}_$(hostname).log"
