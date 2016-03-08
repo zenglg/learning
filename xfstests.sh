@@ -94,6 +94,9 @@ GIT_URL="git://10.167.225.115/git2/oss.sgi.com/xfs/cmds/xfstests.git"
 XFSTESTS_DIR="/root/xfstests"
 if [ ! -d "${XFSTESTS_DIR}" ]; then
 	rod git clone ${GIT_URL} ${XFSTESTS_DIR}
+else
+	cd "${XFSTESTS_DIR}"
+	rod git pull
 fi
 
 if [ -d "/var/lib/xfstests/" ]; then
@@ -103,10 +106,6 @@ fi
 if [ -f "${XFSTESTS_DIR}.log" ]; then
 	rm -rf "${XFSTESTS_DIR}.log"
 fi
-
-cd "${XFSTESTS_DIR}"
-
-rod git pull
 
 rod make clean
 
