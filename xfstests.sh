@@ -157,11 +157,11 @@ if [ $? -eq 0 ]; then
 	fi
 fi
 
-if [ ! -d "/mnt/xfstests/test" ]; then
+if [ ! -d "${TEST_DIR}" ]; then
 	mkdir -p "${TEST_DIR}"
 fi
 
-if [ ! -d "/mnt/xfstests/scratch" ]; then
+if [ ! -d "${SCRATCH_MNT}" ]; then
 	mkdir -p "${SCRATCH_MNT}"
 fi
 
