@@ -11,14 +11,15 @@
 
 fail()
 {
-	echo $@
+	echo "'$@' failed"
 	exit 1
 }
 
 rod()
 {
-	$@ 2>&1 | tee -a ${XFSTEST_CHECK_LOG}
+	$@ >${XFSTEST_CHECK_LOG} 2>&1
 	if [ $? -ne 0 ]; then
+		cat ${XFSTEST_CHECK_LOG}
 		fail $@
 	fi
 }
