@@ -9,8 +9,8 @@ sudo: true
 addons:
    apt:
       packages:
-        - libcunit1-dev
-        - linux-image-$(uname -r)
+        - "libcunit1-dev"
+        - "linux-image-$(uname -r)"
       
 
 script: bash hello_test.sh

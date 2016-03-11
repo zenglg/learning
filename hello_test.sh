@@ -1,17 +1,35 @@
 #!/bin/sh
 
-sudo dmesg -c
+function rod()
+{
+	$@
+	if [ $? -ne 0 ]; then
+		echo "'$@' failed"
+		exit 1
+	fi
+}
 
-make
+function rod_silent()
+{
+	$@ >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "'$@' failed"
+		exit 1
+	fi
+}
 
-lsmod | grep hello
+rod_silent sudo dmesg -c
 
-sudo insmod hello.ko
+rod make
 
-lsmod | grep hello
+rod lsmod | grep hello
 
-sudo rmmod hello
+rod sudo insmod hello.ko
 
-make clean
+rod lsmod | grep hello
 
-dmesg
+rod sudo rmmod hello
+
+rod make clean
+
+rod dmesg
