@@ -1,0 +1,15 @@
+language: c
+
+compiler:
+  - gcc
+
+sudo: false
+
+addons:
+   apt:
+      packages:
+        - libcunit1-dev
+        - kernel-dev
+      
+
+script: bash hello_test.sh
