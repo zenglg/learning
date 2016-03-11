@@ -1,16 +1,16 @@
 #!/bin/sh
 
-dmesg -c
+sudo dmesg -c
 
 make
 
 lsmod | grep hello
 
-insmod hello.ko
+sudo insmod hello.ko
 
 lsmod | grep hello
 
-rmmod hello
+sudo rmmod hello
 
 make clean
 
