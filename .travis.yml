@@ -8,7 +8,7 @@ addons:
    apt:
       packages:
         - "libcunit1-dev"
-        - "linux-image-`uname -r`"
+        - "linux-image-3.13.0-63-generic"
       
 
 script: bash hello_test.sh
