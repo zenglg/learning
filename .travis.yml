@@ -4,13 +4,13 @@ compiler:
   - gcc
   - clang
 
-sudo: false
+sudo: true
 
 addons:
    apt:
       packages:
         - libcunit1-dev
-        - kernel-dev
+        - linux-image-$(uname -r)
       
 
 script: bash hello_test.sh
