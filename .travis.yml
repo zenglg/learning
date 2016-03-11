@@ -1,8 +1,6 @@
 language: c
 
-compiler:
-  - gcc
-  - clang
+compiler: gcc
 
 sudo: true
 
@@ -10,7 +8,7 @@ addons:
    apt:
       packages:
         - "libcunit1-dev"
-        - "linux-image-$(uname -r)"
+        - "linux-image-`uname -r`"
       
 
 script: bash hello_test.sh
