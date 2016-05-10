@@ -133,7 +133,7 @@ resubmit:
  */
 static int usb_mouse_open(struct input_dev *dev)
 {
-	struct usb_mouse *mouse = dev->private;
+	struct usb_mouse *mouse = input_get_drvdata(dev);
 
 	mouse->irq->dev = mouse->usbdev;
 	if (usb_submit_urb(mouse->irq, GFP_KERNEL))
@@ -147,7 +147,7 @@ static int usb_mouse_open(struct input_dev *dev)
  */
 static void usb_mouse_close(struct input_dev *dev)
 {
-	struct usb_mouse *mouse = dev->private;
+	struct usb_mouse *mouse = input_get_drvdata(dev);
 
 	usb_kill_urb(mouse->irq);
 }
@@ -266,7 +266,7 @@ static int usb_mouse_probe(struct usb_interface *intf, const struct usb_device_i
 	input_dev->relbit[0] |= BIT(REL_WHEEL);
 
 	/* input_dev 的 private 数据项用于表示当前输入设备的种类，这里将鼠标结构体对象赋给它 */
-	input_dev->private = mouse;
+	input_set_drvdata(input_dev, mouse);
 	/* 填充输入设备打开函数指针 */
 	input_dev->open = usb_mouse_open;
 	/* 填充输入设备关闭函数指针 */
