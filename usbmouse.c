@@ -120,12 +120,12 @@ static void usb_mouse_irq(struct urb *urb)
 	 * 交 urb 过程中可能会需要申请内存、保持信号量，这些操作或许会导致 USB core 睡眠，一切导致睡眠的行 
 	 * 为都是不允许的。 
 	 */
-      resubmit:
+resubmit:
 	status = usb_submit_urb(urb, GFP_ATOMIC);
 	if (status)
-		err("can't resubmit intr, %s-%s/input0, status %d",
-		    mouse->usbdev->bus->bus_name,
-		    mouse->usbdev->devpath, status);
+		pr_err("can't resubmit intr, %s-%s/input0, status %d",
+		       mouse->usbdev->bus->bus_name,
+		       mouse->usbdev->devpath, status);
 }
 
 /* 
