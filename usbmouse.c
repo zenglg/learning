@@ -202,7 +202,7 @@ static int usb_mouse_probe(struct usb_interface *intf, const struct usb_device_i
 	 * 不允许睡眠状态，data 又是周期性获取鼠标事件的存储区，因此使用 GFP_ATOMIC 优先级，如果不能 
 	 * 分配到内存则立即返回 0。 
 	 */
-	mouse->data = usb_buffer_alloc(dev, 8, GFP_ATOMIC, &mouse->data_dma);
+	mouse->data = usb_alloc_coherent(dev, 8, GFP_ATOMIC, &mouse->data_dma);
 	if (!mouse->data)
 		goto fail1;
 
