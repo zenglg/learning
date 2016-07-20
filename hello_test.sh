@@ -20,6 +20,8 @@ function rod_silent()
 
 rod_silent sudo dmesg -c
 
+rod ls -al /lib/modules/$(uname -r) | grep build
+
 rod make
 
 rod lsmod | grep hello
