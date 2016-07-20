@@ -6,21 +6,42 @@
 
 #define NUM_WORK	10
 
+struct data {
+	int			data;
+	struct list_head	list;
+};
+
 static struct test {
 	struct workqueue_struct	*queue;
-	struct work_struct	*work;
+	struct work_struct	work;
+	struct data		head;
+	spinlock_t		lock;
 } *t;
 
 static void work_queue_handler(struct work_struct *w)
 {
-	printk(KERN_ALERT "work handler function.\n");
-	udelay(100);
+	struct test *tmp = container_of(w, struct test, work);
+	struct data *h = &tmp->head;
+	struct list_head *p, *n;
+	struct data *d;
+
+	list_for_each_safe(p, n, &h->list) {
+		d = list_entry(p, struct data, list);
+		spin_lock(&t->lock);
+		pr_info("d->data:%d\n", d->data);
+		list_del(p);
+		spin_unlock(&t->lock);
+		if (d)
+			kfree(d);
+	}
 }
 
 static int __init work_queue_init(void)
 {
 	int ret = 0;
 	int i;
+	struct list_head *p, *n;
+	struct data *d;
 
 	t = kmalloc(sizeof(struct test), GFP_KERNEL);
 	if (!t) {
@@ -34,20 +55,56 @@ static int __init work_queue_init(void)
 		goto free_t;
 	}
 
-	t->work = kmalloc(sizeof(struct work_struct) * NUM_WORK, GFP_KERNEL);
-	if (!t->work) {
-		ret = -ENOMEM;
-		goto destroy_queue;
-	}
+	INIT_WORK(&t->work, work_queue_handler);
+
+	INIT_LIST_HEAD(&t->head.list);
+
+	spin_lock_init(&t->lock);
+
+	t->head.data = 13;
 
 	for (i = 0; i < NUM_WORK; i++) {
-		INIT_WORK(&t->work[i], work_queue_handler);
-		queue_work(t->queue, &t->work[i]);
+		struct data *data;
+		data = kmalloc(sizeof(struct data), GFP_KERNEL);
+		if (!data) {
+			ret = -ENOMEM;
+			goto free_data;
+		}
+
+		spin_lock(&t->lock);
+		data->data = i;
+		list_add_tail(&(data->list), &(t->head.list));
+		spin_unlock(&t->lock);
 	}
+
+	queue_work(t->queue, &t->work);
+
+	for (i = 0; i < NUM_WORK; i++) {
+		struct data *data;
+		data = kmalloc(sizeof(struct data), GFP_KERNEL);
+		if (!data) {
+			ret = -ENOMEM;
+			goto free_data;
+		}
+
+		spin_lock(&t->lock);
+		data->data = 10 + i;
+		list_add_tail(&(data->list), &(t->head.list));
+		spin_unlock(&t->lock);
+	}
+
+	queue_work(t->queue, &t->work);
 
 	return ret;
 
-destroy_queue:
+free_data:
+	list_for_each_safe(p, n, &(t->head.list)) {
+		d = list_entry(p, struct data, list);
+		list_del(p);
+		if (d)
+			kfree(d);
+	}
+
 	destroy_workqueue(t->queue);
 
 free_t:
@@ -60,9 +117,6 @@ out:
 
 static void __exit work_queue_exit(void)
 {
-	if (t->work)
-		kfree(t->work);
-
 	destroy_workqueue(t->queue);
 
 	if (t)
