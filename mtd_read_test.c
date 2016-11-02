@@ -49,14 +49,14 @@ static int dev = -EINVAL;
 module_param(dev, int, S_IRUGO);
 MODULE_PARM_DESC(dev, "MTD device number to use");
 
-static unsigned long total_size = 4UL*1024*1024*1024;
+static unsigned long total_size = 4UL << 30;
 module_param(total_size, ulong, 0);
 MODULE_PARM_DESC(totoal_size, "Total device size for testing MTD device");
 
 static unsigned long offs = 0;
 module_param(offs, ulong, 0);
 
-static unsigned long len = 4UL*1024;
+static unsigned long len = 4UL << 10;
 module_param(len, ulong, 0);
 
 static struct mtd_info *mtd;
