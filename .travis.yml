@@ -9,6 +9,7 @@ addons:
       packages:
         - "libcunit1-dev"
         - "kernel-package"
+        - "kernel-source"
         - "linux-image-3.13.0-63-generic"
       
 
