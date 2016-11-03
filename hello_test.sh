@@ -20,6 +20,8 @@ function rod_silent()
 
 rod_silent sudo dmesg -c
 
+ls -al /lib/modules/$(uname -r)
+
 rod ls -al /lib/modules/$(uname -r) | grep build
 
 # I donot know how to install the kernel-dev package in ubuntu
