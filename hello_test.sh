@@ -24,10 +24,11 @@ ls -al /lib/modules/$(uname -r)
 
 rod ls -al /lib/modules/$(uname -r) | grep build
 
+uname -r
 # I donot know how to install the kernel-dev package in ubuntu
 # So, exit directly.
 # I will fix it.
-exit 0
+#exit 0
 
 rod make
 
