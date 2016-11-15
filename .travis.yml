@@ -8,7 +8,7 @@ addons:
    apt:
       packages:
         - "libcunit1-dev"
-        - "linux-headers"
+        - "linux-headers-$(uname -r)"
       
 
 script: bash hello_test.sh
