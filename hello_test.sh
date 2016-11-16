@@ -1,6 +1,6 @@
 #!/bin/sh
 
-function rod()
+rod()
 {
 	$@
 	if [ $? -ne 0 ]; then
@@ -9,7 +9,7 @@ function rod()
 	fi
 }
 
-function rod_silent()
+rod_silent()
 {
 	$@ >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
