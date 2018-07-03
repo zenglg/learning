@@ -26,19 +26,18 @@
 # define getch()	{}
 #endif
 
-static struct sudoku
-{
-	int data;
-	int flag;
+static struct sudoku {
+	int	data;
+	int	flag;
 } sudoku[9][9];
 
-static void sudoku_get(char *);
-static void sudoku_print(void);
+static int sudoku_get(const char *);
+static int sudoku_print(const char *, const char *);
 static int sudoku_judge(int, int);
 static int sudoku_judge1(int, int);
 static int sudoku_judge2(int, int);
 static int sudoku_judge3(int, int);
-static void sudoku_solution(void);
+static int sudoku_solution(void);
 static int sudoku_sub_cal(int *, int *);
 
 int main(int argc, char *argv[])
@@ -51,21 +50,18 @@ int main(int argc, char *argv[])
 
 	sudoku_get(argv[1]);
 
-	printf("The original sudoku is:\n");
-	sudoku_print();
-	printf("\n\n\n");
+	sudoku_print("The original sudoku is:", "\n\n");
 
 	sudoku_solution();
 
-	printf("Now the sudoku is:\n");
-	sudoku_print();
+	sudoku_print("Now the sudoku is:", NULL);
 
 	getch();
 
 	return 0;
 }
 
-static void sudoku_get(char *filename)
+static int sudoku_get(const char *filename)
 {
 	int fd;
 	int i, j;
@@ -77,6 +73,7 @@ static void sudoku_get(char *filename)
 		getch();
 		exit(-1);
 	}
+
 	for (i = 0; i < 9; i++) {
 		read(fd, buf, 10);
 		for (j = 0; j < 9; j++) {
@@ -84,18 +81,25 @@ static void sudoku_get(char *filename)
 				sudoku[i][j].data = buf[j] - '0';
 				sudoku[i][j].flag = !!(buf[j] - '0');
 			} else {
-				printf("DATA ERROR!\n");
+				printf("ERROR - Please check origin data\n");
 				getch();
 				exit(-1);
 			}
 		}
 	}
-	close(fd);
+
+	if (fd)
+		close(fd);
+
+	return 0;
 }
 
-static void sudoku_print(void)
+static int sudoku_print(const char *pre, const char *post)
 {
 	int i, j;
+
+	if (pre)
+		printf("%s\n", pre);
 
 	for (i = 0; i < 9; i++) {
 		for (j = 0; j < 9; j++) {
@@ -106,9 +110,14 @@ static void sudoku_print(void)
 		}
 		printf("\n");
 	}
+
+	if (post)
+		printf("%s\n", post);
+
+	return 0;
 }
 
-static void sudoku_solution(void)
+static int sudoku_solution(void)
 {
 	int i, j;
 
@@ -122,6 +131,8 @@ static void sudoku_solution(void)
 			}
 		}
 	}
+
+	return 0;
 }
 
 static int sudoku_sub_cal(int *i, int *j)
@@ -145,7 +156,7 @@ static int sudoku_sub_cal(int *i, int *j)
 				(*i)--;
 				*j = 8;
 			} else {
-				printf("DATA WRONG!Please check data\n");
+				printf("ERROR - Please check origin data\n");
 				getch();
 				exit(-1);
 			}
