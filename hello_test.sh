@@ -18,38 +18,97 @@ rod_silent()
 	fi
 }
 
-test_hello()
+setup()
+{
+	rod make
+}
+
+cleanup()
+{
+	rod make clean
+}
+
+test_hello_setup()
 {
 	rod_silent sudo dmesg -c
 
-	rod ls -al /lib/modules/$(uname -r) | grep build
-
-	rod make
-
 	rod lsmod | grep hello
+}
 
-	rod sudo insmod hello.ko
-
+test_hello_cleanup()
+{
 	rod lsmod | grep hello
 
 	rod sudo rmmod hello
 
-	rod make clean
+	rod dmesg
+}
+
+test_hello()
+{
+	test_hello_setup
+
+	rod sudo insmod hello.ko
+
+	test_hello_cleanup
+}
+
+test_sudoku_setup()
+{
+	rod ./sudoku sudoku_data > sudoku_out
+}
+
+test_sudoku_cleanup()
+{
+	rod rm -rf sudoku sudoku_out
+}
+
+test_sudoku()
+{
+	test_sudoku_setup
+
+	rod diff sudoku_data_out sudoku_out
+
+	test_sudoku_cleanup
+}
+
+test_globalmem_setup()
+{
+	rod_silent sudo dmesg -c
+
+	rod lsmod | grep globalmem
+
+	rod sudo insmod globalmem.ko
+
+	rod lsmod | grep globalmem
+
+	rod sudo mknod /dev/globalmem c 230 0
+}
+
+test_globalmem_cleanup()
+{
+	rod sudo rm -rf /dev/globalmem
+
+	rod sudo rmmod globalmem
 
 	rod dmesg
 }
 
-test_suduku()
+test_globalmem()
 {
-	rod gcc -o sudoku sudoku.c
+	test_globalmem_setup
 
-	rod ./sudoku sudoku_data > sudoku_out
+	rod cat /dev/globalmem
 
-	rod diff sudoku_data_out sudoku_out
-
-	rod rm -rf sudoku sudoku_out
+	test_globalmem_cleanup
 }
+
+setup
 
 test_hello
 
-test_suduku
+test_sudoku
+
+test_globalmem
+
+cleanup
