@@ -11,4 +11,4 @@ addons:
         - "linux-headers-$(uname -r)"
       
 
-script: bash hello_test.sh
+script: bash -x hello_test.sh
