@@ -82,7 +82,8 @@ test_globalmem_setup()
 
 	rod lsmod | grep globalmem
 
-	rod sudo mknod /dev/globalmem c 230 0
+	local globalmem_major=$(awk '/globalmem/ {print $1}' /proc/devices)
+	rod sudo mknod /dev/globalmem c ${globalmem_major} 0
 }
 
 test_globalmem_cleanup()
