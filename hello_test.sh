@@ -18,20 +18,38 @@ rod_silent()
 	fi
 }
 
-rod_silent sudo dmesg -c
+test_hello()
+{
+	rod_silent sudo dmesg -c
 
-rod ls -al /lib/modules/$(uname -r) | grep build
+	rod ls -al /lib/modules/$(uname -r) | grep build
 
-rod make
+	rod make
 
-rod lsmod | grep hello
+	rod lsmod | grep hello
 
-rod sudo insmod hello.ko
+	rod sudo insmod hello.ko
 
-rod lsmod | grep hello
+	rod lsmod | grep hello
 
-rod sudo rmmod hello
+	rod sudo rmmod hello
 
-rod make clean
+	rod make clean
 
-rod dmesg
+	rod dmesg
+}
+
+test_suduku()
+{
+	rod gcc -o sudoku sudoku.c
+
+	rod ./sudoku sudoku_data > sudoku_out
+
+	rod diff sudoku_data_out sudoku_out
+
+	rod rm -rf sudoku sudoku_out
+}
+
+test_hello
+
+test_suduku
