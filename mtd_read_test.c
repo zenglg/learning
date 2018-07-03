@@ -157,7 +157,11 @@ static int __init mtd_read_test_init(void)
 
 		end = ktime_get();
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+		time += (end - start);
+#else
 		time += (end.tv64 - start.tv64);
+#endif
 		count++;
 	}
 
@@ -169,7 +173,9 @@ static int __init mtd_read_test_init(void)
 		pr_info("Time : %llu ns\n", time);
 
 	memset(&ei, 0, sizeof(struct erase_info));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 	ei.mtd  = mtd;
+#endif
 	ei.addr = 0;
 	ei.len  = mtd->erasesize;
 
