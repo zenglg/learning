@@ -15,15 +15,25 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define MPBLEN            1000
-#define MPBNUMSIZ         16
-#define MPBNAMESIZ        16
-#define MPBPASSWORDLEN    16
+#define MPBLEN			1000
+#define MPBNUMSIZ		16
+#define MPBNAMESIZ		16
+#define MPBPASSWORDLEN		16
 
-#define MPBDATA           "./.mpbdata"
-#define MPBPASSWD         "./.passwd"
+#define MPBDATA			"./.mpbdata"
+#define MPBPASSWD		"./.passwd"
 
-#define DELETE            127
+#define NONE			"\033[0m"
+#define BLACK			"\033[30m"
+#define RED			"\033[31m"
+#define GREEN			"\033[32m"
+#define BROWN			"\033[33m"
+#define BLUE			"\033[34m"
+#define PURPLE			"\033[35m"
+#define CYAN			"\033[36m"
+#define WHITE			"\033[37m"
+
+#define DELETE			127
 
 /*
  * This is the struct of myphonebook
@@ -132,7 +142,7 @@ static int mpb_log_in(void)
 	ret = access(MPBPASSWD, F_OK);
 	if (ret == 0) {
 		if (0 != mpb_input_passwd()) {
-			printf("\n\033[31mMaybe you forgot the key!\033[0m\n");
+			printf("\n"RED"Maybe you forgot the key!"NONE"\n");
 			exit(1);
 		}
 	} else {
@@ -185,11 +195,11 @@ static int mpb_create_passwd(void)
 	}
 	if (i < 3) {
 		write(fd, mpb_passwd1, MPBPASSWORDLEN);
-		printf("\n\033[32mcreate passwd success\033[0m\n");
+		printf("\n"GREEN"create passwd success"NONE"\n");
 		close(fd);
 		return 0;
 	} else {
-		printf("\n\033[31merror create passwd\033[0m\n");
+		printf("\n"RED"error create passwd"NONE"\n");
 		close(fd);
 		return 1;
 	}
@@ -224,7 +234,7 @@ static int mpb_input_passwd(void)
 		read(fd, mpb_passwd, MPBPASSWORDLEN);
 		do {
 			fprintf(stdout,
-				"\nEnter password(\033[31m%d\033[0m times): ",
+				"\nEnter password("RED"%d"NONE" times): ",
 				3 - i);
 			memset(mpb_input, 0, MPBPASSWORDLEN);
 			fgets(mpb_input, MPBPASSWORDLEN, stdin);
@@ -283,12 +293,12 @@ static int mpb_menu_choose(void)
 	int choice = -1;
 
 	char *menu[] = {
-		"\033[32m 1\033[0m: add",
-		"\033[32m 2\033[0m: del",
-		"\033[32m 3\033[0m: edit",
-		"\033[32m 4\033[0m: search",
-		"\033[32m 5\033[0m: setting",
-		"\033[31mq/Q\033[0m: quit",
+		GREEN" 1"NONE": add",
+		GREEN" 2"NONE": del",
+		GREEN" 3"NONE": edit",
+		GREEN" 4"NONE": search",
+		GREEN" 5"NONE": setting",
+		RED"q/Q"NONE": quit",
 		NULL,
 	};
 
@@ -323,7 +333,7 @@ static int mpb_menu_choose(void)
 		case 'q':
 			break;
 		default:
-			printf("Have not the choose \033[31m%c\033[0m\n",
+			printf("Have not the choose "RED"%c"NONE"\n",
 			       choice);
 			break;
 		}
@@ -403,9 +413,9 @@ static int mpb_print_all_data(void)
 	int i = 0;
 
 	if (0 < pmpb->mpb_length) {
-		printf("\t\t\033[32mNO.\tName\t\t\tTelephone\033[0m\n\n");
+		printf("\t\t"GREEN"NO.\tName\t\t\tTelephone"NONE"\n\n");
 	} else {
-		printf("\t\t\t\033[31mEMPTY!\033[0m\n");
+		printf("\t\t\t"RED"EMPTY!"NONE"\n");
 		return 1;
 	}
 	while (i < pmpb->mpb_length) {
@@ -425,9 +435,9 @@ static int mpb_print_by_index(int *index, int len)
 	int i = 0;
 
 	if (0 < len) {
-		printf("\t\t\033[32mNO.\tName\t\t\tTelephone\033[0m\n\n");
+		printf("\t\t"GREEN"NO.\tName\t\t\tTelephone"NONE"\n\n");
 	} else {
-		printf("\t\t\t\033[31mEMPTY!\033[0m\n");
+		printf("\t\t\t"RED"EMPTY!"NONE"\n");
 		return 0;
 	}
 	while (i < len) {
@@ -517,12 +527,12 @@ static int mpb_del(void)
 			mpb_clear_screen();
 			return 0;
 		}
-		printf("Please input the \033[32mNO.\033[0m that you want to del: ");
+		printf("Please input the "GREEN"NO."NONE" that you want to del: ");
 		scanf("%d", &del_index);
 		getchar();
 		mpb_clear_screen();
 		if ((del_index > pmpb->mpb_length) || (del_index <= 0)) {
-			printf("Have not the NO. \033[31m%d\033[0m\n\n",
+			printf("Have not the NO. "RED"%d"NONE"\n\n",
 			       del_index);
 		} else {
 			break;
@@ -552,12 +562,12 @@ static int mpb_edit(void)
 			mpb_clear_screen();
 			return 0;
 		}
-		printf("Please input the \033[32mNO.\033[0m that you want to edit: ");
+		printf("Please input the "GREEN"NO."NONE" that you want to edit: ");
 		scanf("%d", &edit_index);
 		getchar();
 		mpb_clear_screen();
 		if ((edit_index > pmpb->mpb_length) || (edit_index <= 0)) {
-			printf("Have not the NO. \033[31m%d\033[0m\n\n",
+			printf("Have not the NO. "RED"%d"NONE"\n\n",
 			       edit_index);
 		} else {
 			break;
@@ -701,7 +711,7 @@ static int mpb_recreate_passwd(void)
 {
 	int choice = -1;
 
-	printf("\nPress \033[31m1\033[0m to change the key.\n");
+	printf("\nPress "RED"1"NONE" to change the key.\n");
 	printf("Or press any others key to back the system.\n\n\n>>");
 	choice = mpb_get_choice();
 	printf("\n");
