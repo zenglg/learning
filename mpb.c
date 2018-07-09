@@ -103,7 +103,7 @@ static int mpb_search(void);
 static int mpb_search_by_index(struct mpb_index *index, int len, char *name,
                                int i);
 static int kmp(const char *str, const char *substr);
-static int mpb_setting(void);
+static int mpb_preference(void);
 
 struct myphonebook *pmpb = NULL;
 
@@ -195,7 +195,7 @@ static int mpb_create_passwd(void)
 	}
 	if (i < 3) {
 		write(fd, mpb_passwd1, MPBPASSWORDLEN);
-		printf("\n"GREEN"create passwd success"NONE"\n");
+		printf("\n"WHITE"create passwd success"NONE"\n");
 		close(fd);
 		return 0;
 	} else {
@@ -293,12 +293,12 @@ static int mpb_menu_choose(void)
 	int choice = -1;
 
 	char *menu[] = {
-		GREEN" 1"NONE": add",
-		GREEN" 2"NONE": del",
-		GREEN" 3"NONE": edit",
-		GREEN" 4"NONE": search",
-		GREEN" 5"NONE": setting",
-		RED"q/Q"NONE": quit",
+		WHITE"A/a"NONE"dd",
+		WHITE"D/d"NONE"el",
+		WHITE"E/e"NONE"dit",
+		WHITE"S/s"NONE"earch",
+		WHITE"P/p"NONE"reference",
+		RED"Q/q"NONE"uit",
 		NULL,
 	};
 
@@ -313,20 +313,25 @@ static int mpb_menu_choose(void)
 		mpb_clear_screen();
 
 		switch (choice) {
-		case '1':
+		case 'A':
+		case 'a':
 			mpb_add();
 			break;
-		case '2':
+		case 'D':
+		case 'd':
 			mpb_del();
 			break;
-		case '3':
+		case 'E':
+		case 'e':
 			mpb_edit();
 			break;
-		case '4':
+		case 'S':
+		case 's':
 			mpb_search();
 			break;
-		case '5':
-			mpb_setting();
+		case 'P':
+		case 'p':
+			mpb_preference();
 			break;
 		case 'Q':
 			choice = 'q';
@@ -413,7 +418,7 @@ static int mpb_print_all_data(void)
 	int i = 0;
 
 	if (0 < pmpb->mpb_length) {
-		printf("\t\t"GREEN"NO.\tName\t\t\tTelephone"NONE"\n\n");
+		printf("\t\t"WHITE"NO.\tName\t\t\tTelephone"NONE"\n\n");
 	} else {
 		printf("\t\t\t"RED"EMPTY!"NONE"\n");
 		return 1;
@@ -435,7 +440,7 @@ static int mpb_print_by_index(int *index, int len)
 	int i = 0;
 
 	if (0 < len) {
-		printf("\t\t"GREEN"NO.\tName\t\t\tTelephone"NONE"\n\n");
+		printf("\t\t"WHITE"NO.\tName\t\t\tTelephone"NONE"\n\n");
 	} else {
 		printf("\t\t\t"RED"EMPTY!"NONE"\n");
 		return 0;
@@ -527,7 +532,7 @@ static int mpb_del(void)
 			mpb_clear_screen();
 			return 0;
 		}
-		printf("Please input the "GREEN"NO."NONE" that you want to del: ");
+		printf("Please input the "WHITE"NO."NONE" that you want to del: ");
 		scanf("%d", &del_index);
 		getchar();
 		mpb_clear_screen();
@@ -562,7 +567,7 @@ static int mpb_edit(void)
 			mpb_clear_screen();
 			return 0;
 		}
-		printf("Please input the "GREEN"NO."NONE" that you want to edit: ");
+		printf("Please input the "WHITE"NO."NONE" that you want to edit: ");
 		scanf("%d", &edit_index);
 		getchar();
 		mpb_clear_screen();
@@ -728,7 +733,7 @@ static int mpb_recreate_passwd(void)
 	return 0;
 }
 
-static int mpb_setting(void)
+static int mpb_preference(void)
 {
 	mpb_clear_screen();
 	mpb_recreate_passwd();
