@@ -5,18 +5,21 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
-#define ROUND		10
-#define BOX_LENGTH	16
-#define NB		4
+#define ROUND			10
+#define BOX_LENGTH		16
+#define NB			4
 
-static char __aes_multiplication_by_2(char a);
+#define AES_ADDITION(a, b)	((a) ^ (b))
+
+static char __aes_multiply_by_2(char a);
 static char __aes_power_by_2(char a, int n);
 
 static int _aes_sub_bytes(const int box[][BOX_LENGTH], const char n);
-static char _aes_addition(char a, char b);
-static char _aes_multiplication(char a, char b);
-static int aes_matrix_multiplication(char a[][NB], char b[][NB], char c[][NB]);
+static char aes_addition(int count, ...);
+static char _aes_multiply(char a, char b);
+static int aes_matrix_multiply(char a[][NB], char b[][NB], char c[][NB]);
 static int _aes_key_expansion(char expanded_key[][NB*(ROUND+1)], int j);
 static int aes_g(char w[NB], int j);
 static int aes_round_get_key(char expanded_key[][NB*(ROUND+1)], char key[][NB], int r);
@@ -142,6 +145,25 @@ static int aes_test(void)
 	return 0;
 }
 
+static char aes_addition(int count, ...)
+{
+        va_list ap;
+        char ret = 0;
+        char t;
+
+        va_start(ap, count);
+
+        do {
+                t = (char)va_arg(ap, int);
+                ret ^= t;
+                count--;
+        } while (count > 0);
+
+        va_end(ap);
+
+        return ret;
+}
+
 static int aes_g(char w[NB], int j)
 {
 	int i;
@@ -157,9 +179,9 @@ static int aes_g(char w[NB], int j)
 	for (i = 0; i < NB; i++) {
 		w[i] = _aes_sub_bytes(s_box, w[i]);
 		if (i == 0)
-			w[i] = _aes_addition(w[i], rc[j/4]);
+			w[i] = AES_ADDITION(w[i], rc[j/4]);
 		else
-			w[i] = _aes_addition(w[i], 0);
+			w[i] = AES_ADDITION(w[i], 0);
 	}
 
 	return 0;
@@ -177,7 +199,7 @@ static int _aes_key_expansion(char expanded_key[][NB*(ROUND+1)], int j)
 		aes_g(t, j);
 
 	for (i = 0; i < NB; i++)
-		expanded_key[i][j] = _aes_addition(expanded_key[i][j-4], t[i]);
+		expanded_key[i][j] = AES_ADDITION(expanded_key[i][j-4], t[i]);
 
 	return 0;
 }
@@ -211,7 +233,7 @@ static int aes_add_round_key(char state[][NB], char key[][NB])
 	for (i = 0; i < NB; i++) {
 		for (j = 0; j < NB; j++) {
 			tmp[i][j] = state[i][j];
-			state[i][j] = _aes_addition(tmp[i][j], key[i][j]);
+			state[i][j] = AES_ADDITION(tmp[i][j], key[i][j]);
 		}
 	}
 
@@ -245,20 +267,20 @@ static int aes_shift_rows(char state[][NB])
 	 * 30 31 32 33 --> 33 30 31 32
 	 */
 
-	tmp = state[1][0];
+	tmp         = state[1][0];
 	state[1][0] = state[1][1];
 	state[1][1] = state[1][2];
 	state[1][2] = state[1][3];
 	state[1][3] = tmp;
 
-	tmp = state[2][0];
+	tmp         = state[2][0];
 	state[2][0] = state[2][2];
 	state[2][2] = tmp;
-	tmp = state[2][1];
+	tmp         = state[2][1];
 	state[2][1] = state[2][3];
 	state[2][3] = tmp;
 
-	tmp = state[3][0];
+	tmp         = state[3][0];
 	state[3][0] = state[3][3];
 	state[3][3] = state[3][2];
 	state[3][2] = state[3][1];
@@ -275,32 +297,27 @@ static int aes_inv_shift_rows(char state[][NB])
 	 * 30 31 32 33 --> 31 32 33 30
 	 */
 
-	tmp = state[1][0];
+	tmp         = state[1][0];
 	state[1][0] = state[1][3];
 	state[1][3] = state[1][2];
 	state[1][2] = state[1][1];
 	state[1][1] = tmp;
 
-	tmp = state[2][0];
+	tmp         = state[2][0];
 	state[2][0] = state[2][2];
 	state[2][2] = tmp;
-	tmp = state[2][1];
+	tmp         = state[2][1];
 	state[2][1] = state[2][3];
 	state[2][3] = tmp;
 
-	tmp = state[3][0];
+	tmp         = state[3][0];
 	state[3][0] = state[3][1];
 	state[3][1] = state[3][2];
 	state[3][2] = state[3][3];
 	state[3][3] = tmp;
 }
 
-static char _aes_addition(char a, char b)
-{
-	return a ^ b;
-}
-
-static char __aes_multiplication_by_2(char a)
+static char __aes_multiply_by_2(char a)
 {
 	char t = (a & 0x7f) << 1;
 
@@ -308,7 +325,7 @@ static char __aes_multiplication_by_2(char a)
 	case 0:
 		return t;
 	case 0x80:
-		return _aes_addition(t, 0x1b);
+		return AES_ADDITION(t, 0x1b);
 	default:
 		printf("%s: 'a(%x) & 0x80 = %x' is not expected\n", __func__,
                        a, a & 0x80);
@@ -322,53 +339,50 @@ static char __aes_power_by_2(char a, int n)
 	char t= a;
 
 	for (i = 0; i < n; i++)
-		t = __aes_multiplication_by_2(t);
+		t = __aes_multiply_by_2(t);
 
 	return t;
 }
 
-static char _aes_multiplication(char a, char b)
+static char _aes_multiply(char a, char b)
 {
 	switch (a) {
 	case 0x1:
 		return b;
 	case 0x2:
-		return __aes_multiplication_by_2(b);
+		return __aes_multiply_by_2(b);
 	case 0x3:
-		return _aes_addition(b, _aes_multiplication(0x2, b));
+		return AES_ADDITION(b, _aes_multiply(0x2, b));
 	case 0x9: // 0x8 + 0x1
-		return _aes_addition(__aes_power_by_2(b, 3), b);
+		return AES_ADDITION(__aes_power_by_2(b, 3), b);
 	case 0xb: // 0x8 + 0x2 + 0x1
-		return _aes_addition(_aes_addition(__aes_power_by_2(b, 3),
-					   __aes_multiplication_by_2(b)), b);
+		return aes_addition(3, __aes_power_by_2(b, 3),
+				    __aes_multiply_by_2(b), b);
 	case 0xd: // 0x8 + 0x4 + 0x1
-		return _aes_addition(_aes_addition(__aes_power_by_2(b, 3),
-					   __aes_power_by_2(b, 2)), b);
+		return aes_addition(3, __aes_power_by_2(b, 3),
+				    __aes_power_by_2(b, 2), b);
 	case 0xe: // 0x8 + 0x4 + 0x2
-		return _aes_addition(_aes_addition(__aes_power_by_2(b, 3),
-					   __aes_power_by_2(b, 2)),
-				 __aes_multiplication_by_2(b));
+		return aes_addition(3, __aes_power_by_2(b, 3),
+				    __aes_power_by_2(b, 2),
+				    __aes_multiply_by_2(b));
 	default:
 		printf("%s: a(%x) and b(%x) is not expected\n", __func__, a, b);
 		exit(-1);
 	}
 }
 
-static int aes_matrix_multiplication(char a[][NB], char b[][NB], char c[][NB])
+static int aes_matrix_multiply(char a[][NB], char b[][NB], char c[][NB])
 {
 	int i;
 	int j;
 
 	for (i = 0; i < NB; i++)
 		for (j = 0; j < NB; j++)
-			c[i][j] = _aes_addition(_aes_addition(_aes_multiplication(a[i][0],
-								      b[0][j]),
-						      _aes_multiplication(a[i][1],
-								      b[1][j])),
-					    _aes_addition(_aes_multiplication(a[i][2],
-								      b[2][j]),
-						      _aes_multiplication(a[i][3],
-								      b[3][j])));
+			c[i][j] = aes_addition(4,
+					       _aes_multiply(a[i][0], b[0][j]),
+					       _aes_multiply(a[i][1], b[1][j]),
+					       _aes_multiply(a[i][2], b[2][j]),
+					       _aes_multiply(a[i][3], b[3][j]));
 
 	return 0;
 }
@@ -383,7 +397,7 @@ static int aes_mix_columns(char state[][NB])
 		for (j = 0; j < NB; j++)
 			t[i][j] = state[i][j];
 
-	return aes_matrix_multiplication(mix_columns_matrix, t, state);
+	return aes_matrix_multiply(mix_columns_matrix, t, state);
 }
 
 static int aes_inv_mix_columns(char state[][NB])
@@ -396,7 +410,7 @@ static int aes_inv_mix_columns(char state[][NB])
 		for (j = 0; j < NB; j++)
 			t[i][j] = state[i][j];
 
-	return aes_matrix_multiplication(inv_mix_columns_matrix, t, state);
+	return aes_matrix_multiply(inv_mix_columns_matrix, t, state);
 }
 
 static int aes_round(char state[][NB], char key[][NB])
