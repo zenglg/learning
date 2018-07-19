@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/mtd/ubi.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 
 #include "ubi.h"
 
@@ -77,7 +78,11 @@ static int __init ubi_read_test_init(void)
 	time_consuming = ktime_sub(after, begin);
 
 	pr_info("Time consuming: %llums -- %lluus\n",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+		time_consuming / 1000000, time_consuming / 1000);
+#else
 		time_consuming.tv64 / 1000000, time_consuming.tv64 / 1000);
+#endif
 
 out:
 	kfree(write_buf);
