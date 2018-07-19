@@ -12,13 +12,15 @@
 DispStr:
 	mov ax, BootMessage
 	mov bp, ax
-	mov cx, 16
+	mov cx, len
 	mov ax, 01301h
 	mov bx, 000ch
 	mov dl, 0
+	mov dh, 1
 	int 10h
 	ret
-BootMessage:       db "Hello, world!"
-times	510-($-$$) db 0
+BootMessage:       db  "Hello, world!"
+len:               equ $-BootMessage
+times	510-($-$$) db  0
 
 dw	0xaa55
