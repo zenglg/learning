@@ -13,23 +13,22 @@
 #define MEM_CLEAR	0x1
 #define GLOBALMEM_MAJOR	230
 
-static int globalmem_major = GLOBALMEM_MAJOR;
-
 struct globalmem_dev {
 	struct cdev cdev;
 	unsigned char mem[GLOBALMEM_SIZE];
 	struct mutex mutex;
 };
 
-struct globalmem_dev *globalmem_devp;
+static int globalmem_major = GLOBALMEM_MAJOR;
+static struct globalmem_dev *globalmem_devp;
 
-int globalmem_open(struct inode *inode, struct file *filp)
+static int globalmem_open(struct inode *inode, struct file *filp)
 {
 	filp->private_data = globalmem_devp;
 	return 0;
 }
 
-int globalmem_release(struct inode *inode, struct file *filp)
+static int globalmem_release(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
@@ -93,7 +92,7 @@ static loff_t globalmem_llseek(struct file *filp, loff_t offset, int orig)
 	loff_t ret;
 
 	switch (orig) {
-	case 0:
+	case SEEK_SET:
 		if (offset < 0) {
 			ret = -EINVAL;
 			break;
@@ -105,7 +104,7 @@ static loff_t globalmem_llseek(struct file *filp, loff_t offset, int orig)
 		filp->f_pos = (unsigned int)offset;
 		ret = filp->f_pos;
 		break;
-	case 1:
+	case SEEK_CUR:
 		if ((filp->f_pos + offset) > GLOBALMEM_SIZE) {
 			ret = -EINVAL;
 			break;
@@ -157,7 +156,7 @@ static void globalmem_setup_cdev(void)
 	int err, devno = MKDEV(globalmem_major, 0);
 
 	cdev_init(&globalmem_devp->cdev, &globalmem_fops);
-	globalmem_devp->cdev.owner = THIS_MODULE;
+	globalmem_devp->cdev.owner = globalmem_fops.owner;
 	err = cdev_add(&globalmem_devp->cdev, devno, 1);
 	if (err)
 		printk(KERN_NOTICE "Error %d adding globalmem", err);
