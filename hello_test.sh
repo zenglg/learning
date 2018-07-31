@@ -104,6 +104,31 @@ test_globalmem()
 	test_globalmem_cleanup
 }
 
+test_kprobe_exam_setup()
+{
+	rod_silent sudo dmesg -c
+
+	rod lsmod | grep kprobe_exam
+}
+
+test_kprobe_exam_cleanup()
+{
+	rod lsmod | grep kprobe_exam
+
+	rod sudo rmmod kprobe_exam
+
+	rod dmesg
+}
+
+test_kprobe_exam()
+{
+	test_kprobe_exam_setup
+
+	rod sudo insmod kprobe_exam.ko
+
+	test_kprobe_exam_cleanup
+}
+
 setup
 
 test_hello
@@ -111,5 +136,7 @@ test_hello
 test_sudoku
 
 test_globalmem
+
+test_kprobe_exam
 
 cleanup
