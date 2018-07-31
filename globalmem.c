@@ -36,7 +36,7 @@ static int globalmem_release(struct inode *inode, struct file *filp)
 static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 			      loff_t *ppos)
 {
-	unsigned long p = *ppos;
+	loff_t p = *ppos;
 	int ret = 0;
 	struct globalmem_dev *dev = filp->private_data;
 
@@ -52,7 +52,7 @@ static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 	} else {
 		*ppos += count;
 		ret = count;
-		printk(KERN_INFO "read %ld bytes(s) from %lu\n", count, p);
+		printk(KERN_INFO "read %ld bytes(s) from %llu\n", count, p);
 	}
 
 	mutex_unlock(&dev->mutex);
@@ -63,7 +63,7 @@ static ssize_t globalmem_read(struct file *filp, char __user *buf, size_t count,
 static ssize_t globalmem_write(struct file *filp, const char __user *buf,
 			       size_t count, loff_t *ppos)
 {
-	unsigned long p = *ppos;
+	loff_t p = *ppos;
 	int ret = 0;
 	struct globalmem_dev *dev = filp->private_data;
 
@@ -79,7 +79,7 @@ static ssize_t globalmem_write(struct file *filp, const char __user *buf,
 	} else {
 		*ppos += count;
 		ret = count;
-		printk(KERN_INFO "written %ld bytes(s) from %lu\n", count, p);
+		printk(KERN_INFO "written %ld bytes(s) from %llu\n", count, p);
 	}
 
 	mutex_unlock(&dev->mutex);
@@ -142,18 +142,19 @@ static long globalmem_ioctl(struct file *filp, unsigned int cmd,
 }
 
 static const struct file_operations globalmem_fops = {
-	.owner = THIS_MODULE,
-	.open = globalmem_open,
-	.release = globalmem_release,
-	.llseek = globalmem_llseek,
-	.read = globalmem_read,
-	.write = globalmem_write,
+	.owner          = THIS_MODULE,
+	.open           = globalmem_open,
+	.release        = globalmem_release,
+	.llseek         = globalmem_llseek,
+	.read           = globalmem_read,
+	.write          = globalmem_write,
 	.unlocked_ioctl = globalmem_ioctl,
 };
 
 static void globalmem_setup_cdev(void)
 {
-	int err, devno = MKDEV(globalmem_major, 0);
+	int err;
+	dev_t devno = MKDEV(globalmem_major, 0);
 
 	cdev_init(&globalmem_devp->cdev, &globalmem_fops);
 	globalmem_devp->cdev.owner = globalmem_fops.owner;
