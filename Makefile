@@ -4,6 +4,7 @@ obj-m += hello.o
 obj-m += mtd_read_test.o
 obj-m += globalmem.o
 obj-m += kprobe_exam.o
+obj-m += globalfifo.o
 # Specify flags for the module compilation.
 #EXTRA_CFLAGS=-g O0
 
