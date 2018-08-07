@@ -7,6 +7,7 @@
 #include <linux/uaccess.h>
 #include <linux/slab.h>
 #include <linux/version.h>
+#include <linux/poll.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/signal.h>
 #endif
@@ -149,12 +150,33 @@ out2:
 	return ret;
 }
 
+static unsigned int globalfifo_poll(struct file *filp, poll_table *wait)
+{
+	unsigned int mask = 0;
+	struct globalfifo_dev *dev = filp->private_data;
+
+	mutex_lock(&dev->mutex);
+	poll_wait(filp, &dev->rq, wait);
+	poll_wait(filp, &dev->wq, wait);
+
+	if (dev->current_len != 0)
+		mask |= POLLIN | POLLRDNORM;
+
+	if (dev->current_len != GLOBALFIFO_SIZE)
+		mask |= POLLOUT | POLLWRNORM;
+
+	mutex_unlock(&dev->mutex);
+
+	return mask;
+}
+
 static const struct file_operations globalfifo_fops = {
 	.owner          = THIS_MODULE,
 	.open           = globalfifo_open,
 	.release        = globalfifo_release,
 	.read           = globalfifo_read,
 	.write          = globalfifo_write,
+	.poll           = globalfifo_poll,
 };
 
 static void globalfifo_setup_cdev(void)
