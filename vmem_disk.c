@@ -33,8 +33,9 @@ enum {
 static int request_mode = VMEMD_QUEUE;
 module_param(request_mode, int, 0);
 
-#define VMEM_DISK_MINORS    16
-#define KERNEL_SECTOR_SIZE  512
+#define VMEM_DISK_MINORS	16
+#define KERNEL_SECTOR_SHIFT	9
+#define KERNEL_SECTOR_SIZE	(1 << KERNEL_SECTOR_SHIFT)
 
 static struct vmem_disk_dev {
 	int size;                       /* Device size in sectors */
@@ -75,9 +76,10 @@ static int vmem_disk_xfer_bio(struct vmem_disk_dev *dev, struct bio *bio)
 	bio_for_each_segment(bvec, bio, iter) {
 		char *buffer = __bio_kmap_atomic(bio, iter);
 
-		vmem_disk_transfer(dev, sector, bio_cur_bytes(bio) >> 9,
-			buffer, bio_data_dir(bio) == WRITE);
-		sector += bio_cur_bytes(bio) >> 9;
+		vmem_disk_transfer(dev, sector,
+				   bio_cur_bytes(bio) >> KERNEL_SECTOR_SHIFT,
+				   buffer, bio_data_dir(bio) == WRITE);
+		sector += bio_cur_bytes(bio) >> KERNEL_SECTOR_SHIFT;
 		__bio_kunmap_atomic(buffer);
 	}
 	return 0;
