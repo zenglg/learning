@@ -217,12 +217,16 @@ out_vfree:
 static int __init vmem_disk_init(void)
 {
 	int i;
+	int ret;
 
-	vmem_disk_major = register_blkdev(vmem_disk_major, "vmem_disk");
-	if (vmem_disk_major <= 0) {
+	ret = register_blkdev(vmem_disk_major, "vmem_disk");
+	if (ret < 0)
 		pr_info("vmem_disk: unable to get major number\n");
 		return -EBUSY;
 	}
+
+	if (vmem_disk_major == 0)
+		vmem_disk_major = ret;
 
 	devices = kmalloc_array(NDEVICES, sizeof(struct vmem_disk_dev),
 				GFP_KERNEL);
