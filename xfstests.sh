@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Author:	Zeng Linggang <linggang.zeng@easystack.cn>
+# Author:	Linggang Zeng <linggang.zeng@easystack.cn>
 # Date:		2014-09-03
 # Edit:
-#		2015-09-10	Zeng Linggang <linggang.zeng@easystack.cn>
-#		2015-11-17	Zeng Linggang <linggang.zeng@easystack.cn>
+#		2015-09-10	Linggang Zeng <linggang.zeng@easystack.cn>
+#		2015-11-17	Linggang Zeng <linggang.zeng@easystack.cn>
 # File:
 #		1. /root/local.config : xfstests config file.
 #		2. /root/filter.sh :	filter the issue test(s).

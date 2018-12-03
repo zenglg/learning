@@ -54,4 +54,4 @@ static void __exit work_queue_exit(void)
 module_init(work_queue_init);
 module_exit(work_queue_exit);
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR("Zeng Linggang");
+MODULE_AUTHOR("Linggang Zeng");

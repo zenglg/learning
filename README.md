@@ -5,4 +5,4 @@ learning
 
 Learning linux
 
-Author: Zeng Linggang <linggang.zeng@easystack.cn>
+Author: Linggang Zeng <linggang.zeng@easystack.cn>

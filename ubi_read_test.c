@@ -101,5 +101,5 @@ module_init(ubi_read_test_init);
 module_exit(ubi_read_test_exit);
 
 MODULE_DESCRIPTION("UBI Read test module");
-MODULE_AUTHOR("Zeng Linggang");
+MODULE_AUTHOR("Linggang Zeng");
 MODULE_LICENSE("GPL");

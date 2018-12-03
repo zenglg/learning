@@ -195,5 +195,5 @@ module_init(mtd_read_test_init);
 module_exit(mtd_read_test_exit);
 
 MODULE_DESCRIPTION("MTD Read test module");
-MODULE_AUTHOR("Zeng Linggang");
+MODULE_AUTHOR("Linggang Zeng");
 MODULE_LICENSE("GPL");
