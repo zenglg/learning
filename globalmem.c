@@ -202,5 +202,5 @@ static void globalmem_exit(void)
 
 module_init(globalmem_init);
 module_exit(globalmem_exit);
-MODULE_AUTHOR("Zeng");
+MODULE_AUTHOR("Linggang Zeng");
 MODULE_LICENSE("GPL v2");

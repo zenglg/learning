@@ -268,5 +268,5 @@ static void vmem_disk_exit(void)
 
 module_init(vmem_disk_init);
 module_exit(vmem_disk_exit);
-MODULE_AUTHOR("Zeng");
+MODULE_AUTHOR("Linggang Zeng");
 MODULE_LICENSE("GPL v2");

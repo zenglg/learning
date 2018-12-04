@@ -54,4 +54,4 @@ static void __exit exit_kthread(void)
 
 module_init(init_kthread);
 module_exit(exit_kthread);
-MODULE_AUTHOR("Zeng");
+MODULE_AUTHOR("Linggang Zeng");
