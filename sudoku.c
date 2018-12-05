@@ -26,7 +26,18 @@
 # define getch()	{}
 #endif
 
+#define FLAG_MUTABLE	0
+#define FLAG_IMMUTABLE	1
+
+#define FLAG_SET(data) \
+	((data) ? FLAG_IMMUTABLE : FLAG_MUTABLE)
+
 static struct sudoku {
+	/*
+	 * If data is 0, then flag is FLAG_MUTABLE;
+	 * else data is [1..9], then flag is FLAG_IMMUTABLE.
+	 * See the macro of FLAG_SET.
+	 */
 	int	data;
 	int	flag;
 } sudoku[9][9];
@@ -79,7 +90,7 @@ static int sudoku_get(const char *filename)
 		for (j = 0; j < 9; j++) {
 			if ((buf[j] >= '0') && (buf[j] <= '9')) {
 				sudoku[i][j].data = buf[j] - '0';
-				sudoku[i][j].flag = !!(buf[j] - '0');
+				sudoku[i][j].flag = FLAG_SET(buf[j] - '0');
 			} else {
 				printf("ERROR - Please check origin data\n");
 				getch();
@@ -123,9 +134,11 @@ static int sudoku_solution(void)
 
 	for (i = 0; i < 9; i++) {
 		for (j = 0; j < 9;) {
-			if (sudoku[i][j].flag == 1) {
+			if (sudoku[i][j].flag == FLAG_IMMUTABLE) {
+				/* next column */
 				j++;
-			} else { /* Backtracking */
+			} else {
+				/* Backtracking */
 				if (sudoku_sub_cal(&i, &j) == 1)
 					break;
 			}
@@ -160,7 +173,7 @@ static int sudoku_sub_cal(int *i, int *j)
 				getch();
 				exit(-1);
 			}
-		} while (1 == sudoku[*i][*j].flag);
+		} while (sudoku[*i][*j].flag == FLAG_IMMUTABLE);
 	}
 
 	return 0;
