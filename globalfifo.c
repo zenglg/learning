@@ -25,10 +25,18 @@ struct globalfifo_dev {
 	struct mutex mutex;
 	wait_queue_head_t rq;
 	wait_queue_head_t wq;
+	struct fasync_struct *async_queue;
 };
 
 static struct globalfifo_dev *globalfifo_devp;
 static int globalfifo_major = GLOBALFIFO_MAJOR;
+
+static int globalfifo_fasync(int fd, struct file *filp, int mode)
+{
+	struct globalfifo_dev *dev = filp->private_data;
+
+	return fasync_helper(fd, filp, mode, &dev->async_queue);
+}
 
 static int globalfifo_open(struct inode *inode, struct file *filp)
 {
@@ -38,6 +46,8 @@ static int globalfifo_open(struct inode *inode, struct file *filp)
 
 static int globalfifo_release(struct inode *inode, struct file *filp)
 {
+	globalfifo_fasync(-1, filp, 0);
+
 	return 0;
 }
 
@@ -47,6 +57,8 @@ static ssize_t globalfifo_read(struct file *filp, char __user *buf,
 	int ret = 0;
 	struct globalfifo_dev *dev = filp->private_data;
 	DECLARE_WAITQUEUE(wait, current);
+
+	dump_stack();
 
 	mutex_lock(&dev->mutex);
 	add_wait_queue(&dev->rq, &wait);
@@ -60,8 +72,11 @@ static ssize_t globalfifo_read(struct file *filp, char __user *buf,
 		__set_current_state(TASK_INTERRUPTIBLE);
 		mutex_unlock(&dev->mutex);
 
+		printk(KERN_INFO "%s: before schedule()\n", __func__);
 		schedule();
+		printk(KERN_INFO "%s: after schedule()\n", __func__);
 		if (signal_pending(current)) {
+			printk(KERN_INFO "%s: signal_pending()\n", __func__);
 			ret = -ERESTARTSYS;
 			goto out2;
 		}
@@ -103,6 +118,8 @@ static ssize_t globalfifo_write(struct file *filp, const char __user *buf,
 	struct globalfifo_dev *dev = filp->private_data;
 	DECLARE_WAITQUEUE(wait, current);
 
+	dump_stack();
+
 	mutex_lock(&dev->mutex);
 	add_wait_queue(&dev->wq, &wait);
 
@@ -115,8 +132,11 @@ static ssize_t globalfifo_write(struct file *filp, const char __user *buf,
 		__set_current_state(TASK_INTERRUPTIBLE);
 		mutex_unlock(&dev->mutex);
 
+		printk(KERN_INFO "%s: before schedule()\n", __func__);
 		schedule();
+		printk(KERN_INFO "%s: after schedule()\n", __func__);
 		if (signal_pending(current)) {
+			printk(KERN_INFO "%s: signal_pending()\n", __func__);
 			ret = -ERESTARTSYS;
 			goto out2;
 		}
@@ -138,6 +158,11 @@ static ssize_t globalfifo_write(struct file *filp, const char __user *buf,
 
 	wake_up_interruptible(&dev->rq);
 
+	if (dev->async_queue) {
+		kill_fasync(&dev->async_queue, SIGIO, POLL_IN);
+		printk(KERN_DEBUG "%s kill SIGIO\n", __func__);
+	}
+
 	ret = count;
 
 out:
@@ -155,6 +180,7 @@ static unsigned int globalfifo_poll(struct file *filp, poll_table *wait)
 	unsigned int mask = 0;
 	struct globalfifo_dev *dev = filp->private_data;
 
+	dump_stack();
 	mutex_lock(&dev->mutex);
 	poll_wait(filp, &dev->rq, wait);
 	poll_wait(filp, &dev->wq, wait);
@@ -177,6 +203,7 @@ static const struct file_operations globalfifo_fops = {
 	.read           = globalfifo_read,
 	.write          = globalfifo_write,
 	.poll           = globalfifo_poll,
+	.fasync         = globalfifo_fasync,
 };
 
 static void globalfifo_setup_cdev(void)
