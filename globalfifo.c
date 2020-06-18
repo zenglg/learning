@@ -1,3 +1,13 @@
+/*
+ * 1. insmod module
+ * # insmod globalfifo.ko
+ * 2. create device file
+ * # mknod /dev/globalfifo c 231 0
+ * 3. remove globalfifo device
+ * # rm -rf /dev/globalfifo
+ * 4. rmmod module
+ * # rmmod globalfifo
+ * */
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/fs.h>
