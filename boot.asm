@@ -1,3 +1,7 @@
+;	# nasm boot.asm -o boot.bin
+;	# dd conv=sync if=boot.bin of=floppy bs=1440k count=1
+;	# qemu-system-x86_64 floppy
+
 ;%define	_BOOT_DEBUG_
 %ifdef	_BOOT_DEBUG_
 	org 0100h
