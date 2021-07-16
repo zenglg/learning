@@ -6,6 +6,7 @@ obj-m += globalmem.o
 obj-m += kprobe_exam.o
 obj-m += globalfifo.o
 obj-m += kobject_create_and_add.o
+obj-m += test_timer.o
 # Specify flags for the module compilation.
 #EXTRA_CFLAGS=-g O0
 
