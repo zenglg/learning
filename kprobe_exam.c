@@ -5,6 +5,7 @@
 #include <linux/kallsyms.h>
 #include <linux/sched.h>
 #include <linux/time.h>
+#include <linux/version.h>
 
 static struct kprobe kp;
 
@@ -47,7 +48,11 @@ static __init int init_kprobe_exam(void)
 	kp.pre_handler = handler_pre;
 	kp.post_handler = handler_post;
 	kp.fault_handler = handler_fault;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)
+	kp.addr = (kprobe_opcode_t *) __symbol_get("cgroup_exit");
+#else
 	kp.addr = (kprobe_opcode_t *) kallsyms_lookup_name("cgroup_exit");
+#endif
 	if (!kp.addr)
 		kp.symbol_name = "cgroup_exit";
 
@@ -64,6 +69,10 @@ static __init int init_kprobe_exam(void)
 static __exit void cleanup_kprobe_exam(void)
 {
 	unregister_kprobe(&kp);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)
+	symbol_put("cgroup_exit");
+#endif
 
 	printk(KERN_INFO "kprobe unregistered\n");
 }
