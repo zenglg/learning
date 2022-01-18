@@ -13,5 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: make dependency
+      run: sudo apt install -y libcunit1-dev linux-headers-$(uname -r)
     - name: make
       run: make
