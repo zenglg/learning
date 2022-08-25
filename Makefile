@@ -8,6 +8,7 @@ obj-m += globalfifo.o
 obj-m += kobject_create_and_add.o
 obj-m += test_timer.o
 obj-m += netlink_module.o
+obj-m += tracepoint-sample.o
 # Specify flags for the module compilation.
 #EXTRA_CFLAGS=-g O0
 
