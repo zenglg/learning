@@ -34,12 +34,14 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs,
 	       smp_processor_id(), current->comm);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0)
 static int handler_fault(struct kprobe *p, struct pt_regs *regs, int trapnr)
 {
 	printk(KERN_INFO "A fault happened during probing.\n");
 
 	return 0;
 }
+#endif
 
 static __init int init_kprobe_exam(void)
 {
@@ -47,7 +49,9 @@ static __init int init_kprobe_exam(void)
 
 	kp.pre_handler = handler_pre;
 	kp.post_handler = handler_post;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0)
 	kp.fault_handler = handler_fault;
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)
 	kp.addr = (kprobe_opcode_t *) __symbol_get("cgroup_exit");
 #else
