@@ -17,6 +17,7 @@ kernel_modules:
 	make -C /lib/modules/$(KVERS)/build M=$(CURDIR) modules
 	gcc -o sudoku sudoku.c
 	gcc -o netlink_test netlink_test.c
+	gcc -o cal_24 cal_24.c
 clean:
 	make -C /lib/modules/$(KVERS)/build M=$(CURDIR) clean
-	rm -rf sudoku
+	rm -rf sudoku netlink_test cal_24
