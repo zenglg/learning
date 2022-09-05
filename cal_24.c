@@ -203,7 +203,7 @@ do
 					continue
 				fi
 
-				s=$(/test $i $j $k $l | sort -u)
+				s=$(./cal_24 $i $j $k $l | sort -u)
 				if [ -n "$s" ]; then
 					n=$(echo "$s" | wc -l)
 					echo "$i $j $k $l : [ $n ]"
