@@ -170,7 +170,7 @@ static double cal(double n1, char op, double n2)
 		break;
 	case '/':
 		if (fabs(n2) < 0.000001)
-			return DBL_MIN;
+			return DBL_MAX;
 
 		ret = n1 / n2;
 		break;
