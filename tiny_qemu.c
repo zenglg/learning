@@ -94,18 +94,18 @@ int main(void)
 		ret = ioctl(vcpu_fd, KVM_RUN, NULL);
 		assert(ret >= 0);
 
-		switch(kvm_run->exit_reason) {
-			case KVM_EXIT_HLT:
-				printf("----KVM EXIT HLT----\n");
-				close(kvm_fd);
-				close(tiny_kernel_fd);
-				return 0;
-			case KVM_EXIT_IO:
-				putchar(*(((char *)kvm_run) + kvm_run->io.data_offset));
-				break;
-			default:
-				printf("Unknow exit reason: %d\n", kvm_run->exit_reason);
-				break;
+		switch (kvm_run->exit_reason) {
+		case KVM_EXIT_HLT:
+			printf("----KVM EXIT HLT----\n");
+			close(kvm_fd);
+			close(tiny_kernel_fd);
+			return 0;
+		case KVM_EXIT_IO:
+			putchar(*(((char *)kvm_run) + kvm_run->io.data_offset));
+			break;
+		default:
+			printf("Unknow exit reason: %d\n", kvm_run->exit_reason);
+			break;
 		}
 	}
 
