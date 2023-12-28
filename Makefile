@@ -18,6 +18,8 @@ kernel_modules:
 	gcc -o sudoku sudoku.c
 	gcc -o netlink_test netlink_test.c
 	gcc -o cal_24 cal_24.c
+	nasm tiny_kernel.S -o tiny_kernel.bin
+	gcc -o tiny_qemu tiny_qemu.c
 clean:
 	make -C /lib/modules/$(KVERS)/build M=$(CURDIR) clean
-	rm -rf sudoku netlink_test cal_24
+	rm -rf sudoku netlink_test cal_24 tiny_kernel.bin tiny_qemu
