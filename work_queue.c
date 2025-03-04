@@ -23,35 +23,47 @@ static int __init work_queue_init(void)
 	/* 创建一个单线程的工作队列 */
 	queue = create_singlethread_workqueue("work_queue");
 	if (!queue) {
-		ret = -1;
-		goto err;
+		ret = -ENOMEM;
+		goto out;
 	}
 
 	work = kmalloc(sizeof(struct work_struct) * NUM_WORK, GFP_KERNEL);
 	if (!work) {
 		ret = -ENOMEM;
-		goto err;
+		goto destroy_work_queue;
 	}
 
 	for (i = 0; i < NUM_WORK; i++) {
 		INIT_WORK(&work[i], work_queue_handler);
 		queue_work(queue, &work[i]);
+		printk(KERN_INFO "Work item %d queued.\n", i);
 	}
 
-	return 0;
-err:
+	return ret;
+
+destroy_work_queue:
+	destroy_workqueue(queue);
+out:
 	return ret;
 }
 
 static void __exit work_queue_exit(void)
 {
+	if (queue)
+		flush_workqueue(queue);
+
 	if (work)
 		kfree(work);
 
-	destroy_workqueue(queue);
+	if (queue)
+		destroy_workqueue(queue);
+
+	printk(KERN_INFO "Workqueue module exited.\n");
 }
 
 module_init(work_queue_init);
 module_exit(work_queue_exit);
+
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Linggang Zeng");
+MODULE_DESCRIPTION("A simple workqueue example");
